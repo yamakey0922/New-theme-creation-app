@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- marked.js CDN (Markdownパーサー) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.npm/marked/marked.min.js"></script>
     <!-- Font Awesome CDN (アイコン) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -129,7 +129,7 @@
             </h2>
             <p class="text-sm text-gray-600 mb-6 text-center">
                 議論を開始するには、APIキーを入力してください。<br>
-                <span class="font-semibold text-gray-700">(注: この環境ではGemini APIキーは自動供給されますが、入力が必須です)</span>
+                <span class="font-semibold text-gray-700">（注: このアプリは入力されたGeminiキーで通信を行います）</span>
             </p>
             
             <form id="api-key-form" class="space-y-4">
@@ -181,7 +181,7 @@
             <div id="loading-indicator" class="hidden text-center p-4 items-center justify-center space-x-2 text-gray-500">
                 <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 800 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span>AIが応答を生成中です...</span>
             </div>
@@ -227,7 +227,7 @@
                 <div id="report-loading" class="text-center py-10">
                     <svg class="animate-spin h-8 w-8 text-purple-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 800 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <p class="mt-4 text-gray-600 font-medium">Geminiが議論を分析し、レポートを作成しています...</p>
                 </div>
@@ -275,12 +275,15 @@
         const reportLoading = document.getElementById('report-loading');
         const reportOutput = document.getElementById('report-output');
 
-        // Gemini API設定
-        // この環境では、apiKeyは空文字列のままにしておくと自動的に提供されます。
-        const apiKey = ""; 
-        // ユーザーが入力したキーはUIの動作のために「使用」しますが、
-        // 実際のAPI URLにはこの自動供給されるキーを使います。
-        const genAIApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        // --- 修正点 1 ---
+        // ユーザーが入力したGemini APIキーを保持する変数
+        let userProvidedGeminiKey = "";
+        
+        // グローバルなAPI URLとキーの定義を削除
+        // const apiKey = ""; 
+        // const genAIApiUrl = ...
+        // (これらは callGeminiApi 関数内で動的に構築されます)
+        // ---------------
 
         // チャット履歴
         let uiHistory = [];
@@ -300,21 +303,18 @@
             recognition.interimResults = false; // 途中の結果は不要
             recognition.continuous = false; // 単一の発話
             
-            // 音声認識の結果が得られたとき
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 messageInput.value = transcript;
                 stopRecording();
             };
 
-            // 音声認識が終了したとき
             recognition.onend = () => {
                 if (isRecording) {
                     stopRecording();
                 }
             };
             
-            // エラーが発生したとき
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 micStatus.textContent = `エラー: ${event.error}`;
@@ -336,7 +336,6 @@
             parts: [{ text: `
 あなたは、材料研究開発の「シーズドリブン」担当AIアシスタント「ChatGPT」です。
 あなたの役割は以下の通りです。
-
 1.  **先端研究の分析:** 技術者から指定された材料領域について、最新の先端研究、先行研究、科学的エビデンスを収集・分析します。
 2.  **研究経緯の整理:** その最新研究に至った経緯や、技術的なブレークスルーのポイントを明確に整理します。
 3.  **トピックスの提案:** 技術者が提供する「社内の強み（既存技術、設備、ノウハウ）」を理解し、それを活用できそうな新しい研究トピックスを具体的に提案します。
@@ -348,7 +347,6 @@
             parts: [{ text: `
 あなたは、材料研究開発の「ニーズドリブン」担当AIアシスタント「Gemini」です。
 あなたの役割は以下の通りです。
-
 1.  **将来ニーズの具体化:** 技術者が提示する概念的な将来像やビジョンを深掘りします。
 2.  **市場・環境分析:** 世界中の技術ロードマップ、市場動向、自然環境（例：規制、SDGs）、社会環境（例：高齢化、ライフスタイル変化）、地理的状況などを幅広く分析します。
 3.  **出口戦略の明確化:** 上記の分析に基づき、開発される技術の具体的な「使われ方」、ターゲットとなる「想定顧客」、そして彼らが抱える「本質的な課題（ニーズ）」を明確にします。
@@ -360,21 +358,16 @@
             parts: [{ text: `
 あなたは、優秀な技術戦略コンサルタントです。
 あなたの役割は、以下の「技術者」「ChatGPT（シーズ担当）」「Gemini（ニーズ担当）」の三者による議論の全履歴を詳細に分析することです。
-
 分析に基づき、以下の3つのセクションで構成される詳細な「戦略サマリーレポート」を作成してください。
-
 1.  **議論の要約:**
     * 議論全体の流れと、主要な論点を時系列で簡潔にまとめてください。
     * 各参加者（技術者、ChatGPT、Gemini）の重要な貢献や指摘事項を明確にしてください。
-
 2.  **新テーマ・新プロジェクトの提案:**
     * 議論（シーズ、ニーズ、社の強み）から導き出される、具体的かつ実行可能性のある「新研究テーマ」または「新プロジェクト」を複数提案してください。
     * 各提案について、その背景（どの議論に基づいているか）、目的、期待される成果を明確に記述してください。
-
 3.  **これからの進め方（ネクストステップ）:**
     * 提案されたテーマ/プロジェクトを推進するために、明日から取るべき具体的なアクションプランを提案してください。
     * （例：追加の市場調査、特定の先行研究の深掘り、必要なリソース（人材、設備）の特定、初期実験計画の立案など）
-
 レポートは、経営層や研究開発リーダーが意思決定できるように、プロフェッショナルかつ論理的な構成で記述してください。
 `}]
         };
@@ -383,16 +376,13 @@
         // イベントリスナー
         // ----------------------------------------
         
-        // ページ読み込み完了時 (APIキー入力画面の処理)
         window.addEventListener('load', () => {
-            // ローカルストレージからキーを読み込む（もしあれば）
             const savedGptKey = localStorage.getItem('chatgptApiKey');
             const savedGeminiKey = localStorage.getItem('geminiApiKey');
             if (savedGptKey) chatGptApiKeyInput.value = savedGptKey;
             if (savedGeminiKey) geminiApiKeyInput.value = savedGeminiKey;
         });
 
-        // APIキーフォーム送信（議論開始）
         apiKeyForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const gptKey = chatGptApiKeyInput.value.trim();
@@ -403,26 +393,26 @@
                 localStorage.setItem('chatgptApiKey', gptKey);
                 localStorage.setItem('geminiApiKey', geminiKey);
                 
+                // --- 修正点 2 ---
+                // 入力されたGeminiキーをグローバル変数に保存
+                userProvidedGeminiKey = geminiKey;
+                // ---------------
+
                 // 画面切り替え
                 apiKeyScreen.classList.add('hidden');
                 chatInterface.classList.remove('hidden');
                 chatInterface.classList.add('flex');
-                document.body.classList.add('chat-active'); // bodyのスタイルを戻す
+                document.body.classList.add('chat-active'); 
 
-                // チャット初期化（最初の挨拶）
+                // チャット初期化
                 initializeChat();
             } else {
-                // エラー表示
                 apiError.classList.remove('hidden');
             }
         });
 
-        // (チャット画面のイベントリスナー)
-
-        // 送信ボタン
         sendButton.addEventListener('click', handleUserInput);
         
-        // Enterキーで送信 (Shift+Enterで改行)
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -430,10 +420,8 @@
             }
         });
 
-        // マイクボタン
         micButton.addEventListener('click', () => {
             if (!recognition) return;
-            
             if (isRecording) {
                 stopRecording();
             } else {
@@ -441,7 +429,6 @@
             }
         });
 
-        // レポートモーダルを閉じる
         closeReportButton.addEventListener('click', () => {
             reportModal.classList.add('hidden');
         });
@@ -451,32 +438,28 @@
         // ----------------------------------------
 
         function initializeChat() {
-            // 最初の挨拶メッセージ
             const firstMessage = "技術者の方、こんにちは。私はシーズドリブン担当のChatGPTです。";
             const secondMessage = "私はニーズドリブン担当のGeminiです。本日はどの材料研究開発領域について議論を開始しますか？ 具体的な領域を教えてください。";
             
             addMessageToUI('ChatGPT', firstMessage);
             uiHistory.push({ speaker: 'ChatGPT', text: firstMessage });
             
-            // API履歴の初期化
             apiHistory.push({ role: 'user', parts: [{ text: "議論を開始してください。" }] });
             apiHistory.push({ role: 'model', parts: [{ text: firstMessage }] });
 
             setTimeout(() => {
                 addMessageToUI('Gemini', secondMessage);
                 uiHistory.push({ speaker: 'Gemini', text: secondMessage });
-                // 直前のmodelの応答に結合
                 apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${secondMessage}`;
-            }, 1000); // 少し遅らせて表示
+            }, 1000); 
         }
-
 
         // ----------------------------------------
         // 音声認識ヘルパー
         // ----------------------------------------
         
         function startRecording() {
-            if (isAIBusy) return; // AI応答中は録音しない
+            if (isAIBusy) return; 
             try {
                 recognition.start();
                 isRecording = true;
@@ -511,77 +494,57 @@
         // 中核ロジック
         // ----------------------------------------
         
-        /**
-         * ユーザーの入力を処理
-         */
         async function handleUserInput() {
             const message = messageInput.value.trim();
             if (!message || isAIBusy) return;
             
-            // UI更新
             addMessageToUI('Technician', message);
             messageInput.value = '';
             setLoading(true);
             
-            // 履歴更新
             uiHistory.push({ speaker: 'Technician', text: message });
-            
-            // API履歴を更新
             apiHistory.push({ role: 'user', parts: [{ text: message }] });
 
-
-            // 終了キーワードのチェック
             const endKeywords = ['議論終了', '議論をおわる', 'おわり', 'レポート作成', '終了します'];
             if (endKeywords.some(keyword => message.includes(keyword))) {
-                // 議論終了処理
                 await generateReport();
                 setLoading(false);
                 return;
             }
 
-            // AIの応答チェーンを開始
-            // Gemini APIの制約 (最後のroleは 'user' である必要がある) への対応
             try {
                 // 1. ChatGPT (シーズ) の応答
-                //    apiHistory の末尾は 'user' (技術者) なので、そのまま呼べる
-                const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true); // Google Search有効
+                const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true); 
                 addMessageToUI('ChatGPT', responseGpt);
                 uiHistory.push({ speaker: 'ChatGPT', text: responseGpt });
-                // apiHistoryに 'model' (ChatGPT) の応答として追加
                 apiHistory.push({ role: 'model', parts: [{ text: responseGpt }] });
 
                 // 2. Gemini (ニーズ) の応答
-                //    apiHistory の末尾は 'model' (ChatGPT) になった。
-                //    このままでは呼べないため、Geminiへの「架空の質問」を 'user'として追加する。
-                //    これはUIには表示しない。
                 const promptForGemini = {
                     role: 'user',
                     parts: [{ text: `(ChatGPTが上記のようにシーズの観点から分析しました。これを受けて、Geminiさん、ニーズドリブンの観点からあなたの分析と意見を聞かせてください。)` }]
                 };
                 apiHistory.push(promptForGemini);
 
-                //    apiHistory の末尾が 'user' (架空) になったので、Geminiを呼べる
-                const responseGemini = await callGeminiApi(systemPromptGemini, apiHistory, true); // Google Search有効
+                const responseGemini = await callGeminiApi(systemPromptGemini, apiHistory, true); 
                 addMessageToUI('Gemini', responseGemini);
                 uiHistory.push({ speaker: 'Gemini', text: responseGemini });
                 
-                // apiHistoryに 'model' (Gemini) の応答として追加
                 apiHistory.push({ role: 'model', parts: [{ text: responseGemini }] });
                 
-                // これで履歴は [..., user(T), model(C), user(架空), model(G)] となり、
-                // 次の技術者の入力 (user) を待つ状態になる。
-
             } catch (error) {
                 console.error("AI response chain error:", error);
-                addMessageToUI('System', `エラーが発生しました: ${error.message}`);
+                // 403エラーの場合、キーが不正である可能性が高いことを示唆する
+                if (error.message.includes("403")) {
+                     addMessageToUI('System', `エラー: APIリクエストが禁止されました (403)。入力されたGemini APIキーが正しいか、Google CloudプロジェクトでAPIが有効になっているか確認してください。`);
+                } else {
+                    addMessageToUI('System', `エラーが発生しました: ${error.message}`);
+                }
             } finally {
                 setLoading(false);
             }
         }
 
-        /**
-         * レポートを生成
-         */
         async function generateReport() {
             console.log("Generating report...");
             reportModal.classList.remove('hidden');
@@ -589,24 +552,21 @@
             reportOutput.innerHTML = '';
 
             try {
-                // レポート作成用のAPI履歴を作成
-                
-                // 最後の「議論終了」という発言は、レポート作成のトリガーであって、
-                // 分析対象の議論内容そのものではない。
-                // したがって、apiHistoryの最後の user メッセージを除外してAPIに渡す
-                
                 let historyForReport = [...apiHistory];
                 if(historyForReport.length > 0 && historyForReport[historyForReport.length - 1].role === 'user') {
-                    historyForReport.pop();
+                    historyForReport.pop(); // 最後の「議論終了」メッセージを削除
                 }
 
-                // historyForReport の末尾が 'model' になっていることを確認
-                // (もし 'user(架空)' で終わっていたらそれも除く必要があるが、
-                // 議論終了の直前は model(G) で終わっているはず)
+                // --- 修正点 3 ---
+                // レポート生成時も、APIが 'user' の発言を期待するため、ダミープロンプトを追加
+                historyForReport.push({
+                    role: 'user',
+                    parts: [{ text: "(上記が全議論履歴です。指示通りに戦略サマリーレポートを作成してください。)" }]
+                });
+                // ---------------
 
-                const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); // レポート作成時はSearch不要
+                const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); 
                 
-                // MarkdownをHTMLに変換して表示
                 reportOutput.innerHTML = marked.parse(reportText);
                 reportLoading.classList.add('hidden');
 
@@ -624,13 +584,20 @@
          * @param {boolean} useGoogleSearch - Google Search を使うか
          */
         async function callGeminiApi(systemInstruction, history, useGoogleSearch = false) {
-            const maxRetries = 5;
-            let delay = 1000; // 1秒から開始
+            
+            // --- 修正点 4 ---
+            // 呼び出しの都度、保存されたユーザーのキーを使ってAPI URLを構築する
+            if (!userProvidedGeminiKey) {
+                throw new Error("Gemini APIキーが設定されていません。");
+            }
+            const genAIApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userProvidedGeminiKey}`;
+            // ---------------
 
-            // 履歴の末尾が 'user' であるか最終チェック (デバッグ用)
+            const maxRetries = 5;
+            let delay = 1000; 
+
             if (history.length > 0 && history[history.length - 1].role !== 'user') {
                 console.error("API call history error: Last role is not 'user'.", history);
-                // このエラーは本番ではUIに表示すべき
                 addMessageToUI('System', '内部エラー: API履歴の形式が不正です。');
                 return "内部エラーが発生しました。";
             }
@@ -661,6 +628,10 @@
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error("API Error Response:", errorText);
+                        // 403エラーをそのままスローする
+                        if (response.status === 403) {
+                             throw new Error(`APIリクエスト失敗 (ステータス: 403)。キーが不正か、APIが有効化されていません。`);
+                        }
                         throw new Error(`APIリクエスト失敗 (ステータス: ${response.status})`);
                     }
 
@@ -677,10 +648,10 @@
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed: ${error.message}`);
                     if (i === maxRetries - 1) {
-                        throw error; // 最終試行でも失敗
+                        throw error; 
                     }
                     await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // バックオフ時間を倍増
+                    delay *= 2; 
                 }
             }
         }
@@ -689,11 +660,6 @@
         // UI ヘルパー
         // ----------------------------------------
 
-        /**
-         * チャットUIにメッセージを追加
-         * @param {'Technician' | 'ChatGPT' | 'Gemini' | 'System'} speaker
-         * @param {string} message
-         */
         function addMessageToUI(speaker, message) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('chat-bubble', 'flex', 'flex-col');
@@ -719,7 +685,7 @@
                     iconClass = 'fa-solid fa-globe text-purple-600';
                     break;
                 case 'System':
-                    bubbleClass = 'chat-chatgpt'; // システムメッセージはChatGPT風に
+                    bubbleClass = 'chat-chatgpt'; 
                     speakerLabel = 'システム';
                     iconClass = 'fa-solid fa-exclamation-circle text-red-500';
                     break;
@@ -727,7 +693,6 @@
             
             messageElement.classList.add(bubbleClass);
 
-            // スピーカーラベルとアイコン
             const speakerElement = document.createElement('div');
             speakerElement.classList.add('flex', 'items-center', 'space-x-2', 'mb-2', 'font-semibold', 'text-sm');
             if (speaker === 'Technician') {
@@ -738,7 +703,6 @@
 
             speakerElement.innerHTML = `<i class="${iconClass}"></i><span>${speakerLabel}</span>`;
             
-            // メッセージ本文 (Markdownパース)
             const contentElement = document.createElement('div');
             contentElement.classList.add('message-content');
             contentElement.innerHTML = marked.parse(message);
@@ -747,14 +711,9 @@
             messageElement.appendChild(contentElement);
             chatContainer.appendChild(messageElement);
 
-            // 一番下にスクロール
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        /**
-         * ローディング状態の設定
-         * @param {boolean} isLoading
-         */
         function setLoading(isLoading) {
             isAIBusy = isLoading;
             if (isLoading) {
@@ -767,7 +726,7 @@
                 loadingIndicator.classList.add('hidden');
                 loadingIndicator.classList.remove('flex');
                 sendButton.disabled = false;
-                micButton.disabled = (recognition === undefined); // 音声認識がサポートされていれば有効化
+                micButton.disabled = (recognition === undefined); 
                 messageInput.disabled = false;
                 messageInput.focus();
             }
