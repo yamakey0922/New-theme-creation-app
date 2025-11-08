@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Materials Strategy Tri-Agent Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ====== CSS ====== -->
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-soft: #111827;
+            --bg-softer: #020817;
+            --border-subtle: #1f2937;
+            --accent: #38bdf8;
+            --accent-soft: rgba(56,189,248,0.18);
+            --accent-gemini: #22c55e;
+            --accent-chatgpt: #6366f1;
+            --accent-engineer: #f97316;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --radius-xl: 18px;
+            --radius-md: 10px;
+            --shadow-soft: 0 18px 40px rgba(15,23,42,0.75);
+            --transition-fast: 0.18s ease;
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", -system-ui, sans-serif;
+            --badge-size: 11px;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            background: radial-gradient(circle at top left, #111827, #020817 55%);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-shell {
+            max-width: 1240px;
+            margin: 24px auto;
+            padding: 18px 18px 22px;
+            background: radial-gradient(circle at top, rgba(56,189,248,0.04), transparent 70%) fixed,
+                        rgba(2,6,23,0.96);
+            border-radius: 28px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(148,163,253,0.14);
+            backdrop-filter: blur(20px);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 8px 6px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .title-block h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.03em;
+        }
+        .title-sub {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .role-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 9px;
+            border: 1px solid rgba(156,163,175,0.38);
+            color: var(--muted);
+            background: rgba(9,9,11,0.85);
+        }
+        .pill span.badge {
+            width: var(--badge-size);
+            height: var(--badge-size);
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .pill.chatgpt .badge { background: var(--accent-chatgpt); }
+        .pill.gemini .badge { background: var(--accent-gemini); }
+        .pill.engineer .badge { background: var(--accent-engineer); }
+
+        .config {
+            display: grid;
+            grid-template-columns: 2.2fr 1.8fr;
+            gap: 14px;
+            padding: 10px 6px 10px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .config-block {
+            padding: 10px 10px 8px;
+            border-radius: 16px;
+            background: radial-gradient(circle at top, rgba(15,23,42,0.6), rgba(9,9,11,0.96));
+            border: 1px solid rgba(75,85,99,0.7);
+        }
+        .config-block h2 {
+            margin: 0 0 4px;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .field-row {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 6px;
+            margin-bottom: 4px;
+            align-items: center;
+        }
+        .field-row label {
+            font-size: 9px;
+            color: var(--muted);
+        }
+        .field-row input {
+            font-size: 10px;
+            padding: 5px 7px;
+            border-radius: 8px;
+            border: 1px solid rgba(75,85,99,0.9);
+            background: rgba(2,6,23,0.98);
+            color: var(--text);
+            width: 100%;
+            outline: none;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+        }
+        .field-row input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(56,189,248,0.25);
+            background: #020817;
+        }
+        .hint {
+            font-size: 8px;
+            color: var(--muted);
+            margin-top: 4px;
+            line-height: 1.6;
+        }
+
+        .persona-brief {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .persona-card {
+            padding: 6px 8px;
+            border-radius: 10px;
+            background: radial-gradient(circle at top, rgba(15,23,42,0.7), rgba(9,9,11,0.98));
+            border: 1px solid rgba(75,85,99,0.9);
+            font-size: 8px;
+            color: var(--muted);
+        }
+        .persona-card strong {
+            display: block;
+            font-size: 9px;
+            margin-bottom: 2px;
+            color: var(--accent);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: minmax(0, 2.4fr) minmax(260px, 1.6fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(75,85,99,0.85);
+            background:
+                radial-gradient(circle at top left, rgba(56,189,248,0.03), transparent 70%),
+                rgba(6,8,20,0.98);
+            min-height: 420px;
+        }
+        .chat-log {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-bottom: 6px;
+            scrollbar-width: thin;
+        }
+        .chat-log::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-log::-webkit-scrollbar-thumb {
+            background: rgba(75,85,99,0.8);
+            border-radius: 999px;
+        }
+
+        .msg-row {
+            display: flex;
+            margin-bottom: 6px;
+        }
+        .msg {
+            max-width: 92%;
+            padding: 7px 9px 7px;
+            border-radius: 12px;
+            font-size: 10px;
+            line-height: 1.6;
+            position: relative;
+            border: 1px solid transparent;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .msg-header {
+            font-size: 8px;
+            margin-bottom: 2px;
+            opacity: 0.82;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .msg-header span.dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            display: inline-block;
+        }
+
+        .msg.engineer {
+            margin-left: auto;
+            background: linear-gradient(to right, rgba(248,250,252,0.06), rgba(249,115,22,0.1));
+            border-color: rgba(249,115,22,0.38);
+            color: var(--text);
+        }
+        .msg.engineer .msg-header .dot { background: var(--accent-engineer); }
+
+        .msg.chatgpt {
+            margin-right: auto;
+            background: linear-gradient(to left, rgba(15,23,42,0.98), rgba(99,102,241,0.16));
+            border-color: rgba(99,102,241,0.55);
+        }
+        .msg.chatgpt .msg-header .dot { background: var(--accent-chatgpt); }
+
+        .msg.gemini {
+            margin-right: auto;
+            background: linear-gradient(to left, rgba(9,9,11,0.98), rgba(34,197,94,0.11));
+            border-color: rgba(34,197,94,0.55);
+        }
+        .msg.gemini .msg-header .dot { background: var(--accent-gemini); }
+
+        .msg.system {
+            margin: 0 auto 6px;
+            background: rgba(15,23,42,0.98);
+            border-color: rgba(148,163,253,0.34);
+            font-size: 8px;
+            color: var(--muted);
+        }
+
+        .input-bar {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 6px;
+            align-items: stretch;
+            margin-top: 2px;
+        }
+        .input-bar textarea {
+            resize: none;
+            max-height: 80px;
+            min-height: 40px;
+            padding: 6px 8px;
+            font-size: 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(75,85,99,0.9);
+            background: rgba(2,6,23,0.98);
+            color: var(--text);
+            outline: none;
+            line-height: 1.6;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+        }
+        .input-bar textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(56,189,248,0.25);
+            background: #020817;
+        }
+        button {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-radius: 999px;
+            padding: 0 11px;
+            font-size: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+        .btn-send {
+            background: linear-gradient(to right, var(--accent), #60a5fa);
+            color: #020817;
+            font-weight: 600;
+        }
+        .btn-send:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(37,99,235,0.35);
+        }
+        .btn-mic {
+            background: rgba(15,23,42,1);
+            color: var(--accent);
+            border-radius: 11px;
+            border: 1px solid rgba(56,189,248,0.5);
+            padding-inline: 8px;
+        }
+        .btn-mic.recording {
+            background: rgba(248,113,22,0.12);
+            color: #fb923c;
+            border-color: #fb923c;
+            box-shadow: 0 0 10px rgba(248,113,22,0.6);
+        }
+        .btn-end {
+            background: rgba(15,23,42,1);
+            color: #f97316;
+            border-radius: 11px;
+            border: 1px solid rgba(249,115,22,0.6);
+            padding-inline: 9px;
+        }
+        .btn-end:hover {
+            background: rgba(249,115,22,0.12);
+        }
+        .btn-clear {
+            background: rgba(9,9,11,0.98);
+            color: var(--muted);
+            border-radius: 11px;
+            border: 1px solid rgba(75,85,99,0.9);
+            padding-inline: 8px;
+        }
+        .btn-clear:hover {
+            background: rgba(17,24,39,1);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .panel {
+            padding: 8px 9px;
+            border-radius: 16px;
+            border: 1px solid rgba(75,85,99,0.85);
+            background: rgba(4,7,20,0.98);
+            font-size: 8px;
+            color: var(--muted);
+        }
+        .panel h3 {
+            margin: 0 0 4px;
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+        .panel code {
+            font-size: 7px;
+            background: rgba(15,23,42,0.96);
+            padding: 2px 4px;
+            border-radius: 5px;
+            border: 1px solid rgba(75,85,99,0.9);
+            display: block;
+            margin-top: 2px;
+            white-space: pre-wrap;
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .status-ok { background: #22c55e; }
+        .status-warn { background: #f97316; }
+        .status-bad { background: #ef4444; }
+        .small-label {
+            font-size: 7px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+
+    <!-- ====== HEADER ====== -->
+    <header>
+        <div class="title-block">
+            <h1>Materials Strategy Tri-Agent Studio</h1>
+            <div class="title-sub">
+                ChatGPT（シーズ）× Gemini（ニーズ）× 技術者（現実）による 材料研究開発戦略 共創エージェント
+            </div>
+            <div class="role-pills">
+                <div class="pill chatgpt"><span class="badge"></span>ChatGPT：先端・先行研究／シーズ視点</div>
+                <div class="pill gemini"><span class="badge"></span>Gemini：ニーズ視点／市場・環境・社会シナリオ</div>
+                <div class="pill engineer"><span class="badge"></span>技術者：対象領域／社内知見／将来像</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ====== CONFIG ====== -->
+    <section class="config">
+        <div class="config-block">
+            <h2>API設定（ブラウザ内でのみ使用／保存はローカル）</h2>
+            <div class="field-row">
+                <label for="openaiKey">OpenAI API Key</label>
+                <input id="openaiKey" type="password" placeholder="sk-...">
+            </div>
+            <div class="field-row">
+                <label for="openaiModel">ChatGPT Model</label>
+                <input id="openaiModel" type="text" value="gpt-4.1-mini" />
+            </div>
+            <div class="field-row">
+                <label for="geminiKey">Gemini API Key</label>
+                <input id="geminiKey" type="password" placeholder="AIza...">
+            </div>
+            <div class="field-row">
+                <label for="geminiModel">Gemini Model</label>
+                <input id="geminiModel" type="text" value="gemini-1.5-flash" />
+            </div>
+            <div class="hint">
+                ※ セキュリティのため、本番環境ではバックエンド経由でAPIを呼び出す構成が推奨。ここでは検証用としてフロント単体構成を想定。
+            </div>
+        </div>
+        <div class="config-block">
+            <h2>議論の起点（最初に技術者が入力）</h2>
+            <div class="field-row">
+                <label for="targetDomain">対象材料領域</label>
+                <input id="targetDomain" type="text" placeholder="例：全固体電池用固体電解質、触媒、磁性材料など">
+            </div>
+            <div class="field-row">
+                <label for="internalStrength">社内の強み・知見</label>
+                <input id="internalStrength" type="text" placeholder="例：特定プロセス設備、解析技術、既存特許群など">
+            </div>
+            <div class="field-row">
+                <label for="futureVision">将来像・コンセプト</label>
+                <input id="futureVision" type="text" placeholder="例：2035年のCN、MaaS、地域電力網、災害レジリエンス等">
+            </div>
+            <div class="hint">
+                この情報は最初の発話に自動で埋め込むことができる。<br>
+                「終了」「終わり」「end discussion」等、もしくは右下の[議論を終了]ボタンで終了宣言。
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== MAIN LAYOUT ====== -->
+    <section class="main">
+        <!-- === Chat Area === -->
+        <div class="chat-panel">
+            <div id="chatLog" class="chat-log"></div>
+            <div class="input-bar">
+                <textarea id="userInput" placeholder="技術者として話しかけてください。最初は『今回議論したい材料研究開発領域』を指定してください。Shift+Enterで改行、Enterで送信。"></textarea>
+                <button id="micBtn" class="btn-mic" title="音声入力（ブラウザのWeb Speech API使用）">
+                    🎤 <span class="small-label">音声</span>
+                </button>
+                <button id="endBtn" class="btn-end" title="議論を終了し、Geminiに要約＆提案レポート生成を指示">
+                    ■ 終了
+                </button>
+                <button id="sendBtn" class="btn-send">
+                    ⏎ 送信
+                </button>
+            </div>
+            <div style="margin-top:2px; display:flex; justify-content:space-between; align-items:center;">
+                <div class="small-label" style="color:var(--muted);">
+                    会話履歴はローカルストレージに保存し、各LLM呼び出し時に全履歴を参照して「忘れない」運用を行う。
+                </div>
+                <button id="clearBtn" class="btn-clear" title="会話履歴とローカルストレージをクリア">
+                    🗑 履歴クリア
+                </button>
+            </div>
+        </div>
+
+        <!-- === Sidebar: Logic & Status === -->
+        <div class="sidebar">
+            <div class="panel">
+                <h3>エージェント設計（概要）</h3>
+                <p>
+                    <span class="status-dot status-ok"></span>
+                    <strong>ChatGPT（シーズ側）</strong>：指定材料領域の先端〜先行研究、起源からの技術史、理論的背景、主要論文・特許・国際プロジェクト等を整理し、<u>社内の既存資産と接続可能なシーズ群</u>を抽出する。
+                </p>
+                <p>
+                    <span class="status-dot status-ok"></span>
+                    <strong>Gemini（ニーズ側）</strong>：世界の規制・市場トレンド・自然環境・地政学・社会要請を踏まえ、2030–2040年代の<u>出口シナリオ・想定顧客・ユースケース</u>を構成する。
+                </p>
+                <p>
+                    <span class="status-dot status-ok"></span>
+                    <strong>技術者</strong>：社内実情・制約・強み・経営方針をインプットし、両AIに修正・深掘りを要求しながら、実装可能な新テーマ／新プロジェクトを共創する。
+                </p>
+            </div>
+            <div class="panel">
+                <h3>ChatGPT用 System Prompt（要旨）</h3>
+                <code id="chatgptPromptPreview"></code>
+            </div>
+            <div class="panel">
+                <h3>Gemini用 System Prompt（要旨）</h3>
+                <code id="geminiPromptPreview"></code>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- ====== JS ====== -->
+<script>
+/**
+ * Materials Strategy Tri-Agent Studio
+ * - 3者: ChatGPT / Gemini / Engineer
+ * - 会話履歴を常に全モデルへ渡し、localStorageにも保存して「忘れない」構成
+ * - 終了宣言後は Gemini による要約＋提案レポート生成
+ * - APIキーはブラウザ内でのみ利用（本番では必ずサーバ側で保護すること）
+ */
+
+const chatLogEl = document.getElementById('chatLog');
+const userInputEl = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const endBtn = document.getElementById('endBtn');
+const micBtn = document.getElementById('micBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+const openaiKeyEl = document.getElementById('openaiKey');
+const openaiModelEl = document.getElementById('openaiModel');
+const geminiKeyEl = document.getElementById('geminiKey');
+const geminiModelEl = document.getElementById('geminiModel');
+
+const targetDomainEl = document.getElementById('targetDomain');
+const internalStrengthEl = document.getElementById('internalStrength');
+const futureVisionEl = document.getElementById('futureVision');
+
+const chatgptPromptPreview = document.getElementById('chatgptPromptPreview');
+const geminiPromptPreview = document.getElementById('geminiPromptPreview');
+
+let conversation = []; // {speaker: 'engineer'|'chatgpt'|'gemini'|'system', text: string}
+let discussionEnded = false;
+let recognition = null;
+let isRecording = false;
+
+const STORAGE_KEY = 'tri_agent_materials_conversation_v1';
+
+// ===== System Prompts =====
+const chatgptSystemPrompt = `
+あなたは「シーズドリブンの先端・先行材料研究エージェント」である。
+役割:
+1. 技術者が指定した材料研究開発領域について、最新の学術論文・特許・大型プロジェクト・標準化動向など、科学的エビデンスに基づき体系的に整理する。
+2. 歴史的な技術進化パス（どの様な理論・ブレイクスルーを経て現在のフロンティアに至ったか）を簡潔に示す。
+3. 技術者が提供する社内知見・設備・知財・人材などの強み情報を読み取り、「社内の強みがレバレッジされる具体的シーズ候補」を列挙し、根拠を示す。
+4. Gemini（ニーズ側）の提案と技術者コメントを踏まえ、「どのシーズが戦略的に重要か」「何を深掘りすべきか」を対話的に更新する。
+応答スタイル:
+- 日本語で回答。
+- 箇条書きは有効に使うが、単なる要約でなく、根拠・代表例・参考キーワードを毎回含める。
+- 技術者が「終了」と明示するまでは、新テーマ提案を急いで確定させず、探索空間を整理し続ける。
+`;
+
+const geminiSystemPrompt = `
+あなたは「ニーズドリブンの材料戦略エージェント」である。
+役割:
+1. 技術者が示す将来像・社会課題・事業戦略キーワードをもとに、世界の市場動向、規制、地政学、自然環境制約、サプライチェーン、顧客行動を踏まえた「出口シナリオ」を設計する。
+2. ChatGPTが整理したシーズ情報と組み合わせて、「どの用途・誰の課題・どの地域・どのインフラで使われる技術か」を具体的に描写する。
+3. 技術者が提示する社内強みを尊重し、「現実的に取り得るポジショニング」と「高難度だが戦略的価値が大きい挑戦領域」を分けて提案する。
+4. 技術者が「終了」と宣言した後:
+   - それまでの全対話を踏まえ、(a)議論サマリ (b)新テーマ・新プロジェクト案 (c)推奨ロードマップ (d)リスクとNext Action を含む提案レポートを日本語で出力する。
+応答スタイル:
+- 日本語で回答。
+- 可能な限り定量・根拠・外部環境要因を織り込む。
+- 対話中は結論を一つに固定せず、選択肢と含意を提示しつつ技術者に問い返す。
+`;
+
+// Show brief previews in sidebar
+chatgptPromptPreview.textContent = trimForPreview(chatgptSystemPrompt, 340);
+geminiPromptPreview.textContent = trimForPreview(geminiSystemPrompt, 340);
+
+function trimForPreview(text, maxLen) {
+    const t = text.trim().replace(/\s+/g, ' ');
+    return t.length > maxLen ? t.slice(0, maxLen) + ' ...' : t;
+}
+
+// ===== Conversation Persistence =====
+function saveConversation() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            conversation,
+            targetDomain: targetDomainEl.value || '',
+            internalStrength: internalStrengthEl.value || '',
+            futureVision: futureVisionEl.value || ''
+        }));
+    } catch (e) {
+        console.warn('Failed to save conversation', e);
+    }
+}
+
+function loadConversation() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            appendSystemMessage(
+                '最初に「今回議論したい材料研究開発領域」を技術者として入力してください。' +
+                '\n例：「全固体電池用硫化物系固体電解質について議論したい」'
+            );
+            return;
+        }
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.conversation)) {
+            conversation = data.conversation;
+            conversation.forEach(msg => renderMessage(msg.speaker, msg.text, true));
+        }
+        if (data.targetDomain) targetDomainEl.value = data.targetDomain;
+        if (data.internalStrength) internalStrengthEl.value = data.internalStrength;
+        if (data.futureVision) futureVisionEl.value = data.futureVision;
+        scrollToBottom();
+    } catch (e) {
+        console.warn('Failed to load conversation', e);
+    }
+}
+
+// ===== Rendering =====
+function renderMessage(speaker, text, skipPush = false) {
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+
+    const msg = document.createElement('div');
+    msg.classList.add('msg');
+
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+
+    let label = '';
+    if (speaker === 'engineer') {
+        msg.classList.add('engineer');
+        label = '技術者';
+    } else if (speaker === 'chatgpt') {
+        msg.classList.add('chatgpt');
+        label = 'ChatGPT（シーズ側）';
+    } else if (speaker === 'gemini') {
+        msg.classList.add('gemini');
+        label = 'Gemini（ニーズ側）';
+    } else {
+        msg.classList.add('system');
+        label = 'System';
+    }
+
+    header.appendChild(dot);
+    header.appendChild(document.createTextNode(label));
+    msg.appendChild(header);
+    msg.appendChild(document.createTextNode(text));
+    row.appendChild(msg);
+    chatLogEl.appendChild(row);
+    scrollToBottom();
+
+    if (!skipPush) {
+        conversation.push({ speaker, text });
+        saveConversation();
+    }
+}
+
+function appendSystemMessage(text) {
+    renderMessage('system', text);
+}
+function appendEngineerMessage(text) {
+    renderMessage('engineer', text);
+}
+function appendChatGPTMessage(text) {
+    renderMessage('chatgpt', text);
+}
+function appendGeminiMessage(text) {
+    renderMessage('gemini', text);
+}
+
+function scrollToBottom() {
+    requestAnimationFrame(() => {
+        chatLogEl.scrollTop = chatLogEl.scrollHeight;
+    });
+}
+
+// ===== Input Handling =====
+sendBtn.addEventListener('click', handleUserInput);
+
+userInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleUserInput();
+    }
+});
+
+function buildInitialContextIfEmpty() {
+    if (conversation.length === 0) {
+        const td = targetDomainEl.value?.trim();
+        const isVal = internalStrengthEl.value?.trim();
+        const fv = futureVisionEl.value?.trim();
+        if (td) {
+            let seed = `【前提共有】\n今回議論したい材料研究開発領域：${td}`;
+            if (isVal) seed += `\n社内の強み・知見：${isVal}`;
+            if (fv) seed += `\n将来像・コンセプト：${fv}`;
+            appendEngineerMessage(seed);
+        }
+    }
+}
+
+async function handleUserInput() {
+    if (discussionEnded) {
+        appendSystemMessage('すでに議論は終了しています。新たに開始する場合は履歴クリアしてください。');
+        return;
+    }
+
+    buildInitialContextIfEmpty();
+
+    const text = userInputEl.value.trim();
+    if (!text) return;
+    userInputEl.value = '';
+    appendEngineerMessage(text);
+
+    const lowered = text.toLowerCase();
+    if (/[終了終わり終結]/.test(text) || lowered.includes('end discussion')) {
+        // treat as explicit end signal
+        await endDiscussion();
+    } else {
+        await triAgentTurn();
+    }
+}
+
+// ===== Tri-Agent Turn =====
+async function triAgentTurn() {
+    // 1) ChatGPTシーズ側 → 2) Geminiニーズ側 の順に呼び出し
+    await callChatGPTAgent();
+    await callGeminiAgent();
+}
+
+// Build messages for OpenAI Chat Completions
+function buildChatGPTMessages() {
+    const messages = [
+        { role: 'system', content: chatgptSystemPrompt.trim() }
+    ];
+    for (const m of conversation) {
+        if (m.speaker === 'engineer') {
+            messages.push({ role: 'user', content: m.text });
+        } else if (m.speaker === 'chatgpt') {
+            messages.push({ role: 'assistant', content: `[ChatGPT] ${m.text}` });
+        } else if (m.speaker === 'gemini') {
+            messages.push({ role: 'assistant', content: `[Gemini] ${m.text}` });
+        } else if (m.speaker === 'system') {
+            // system messages already exist; optionally embed as assistant
+            messages.push({ role: 'assistant', content: `[System] ${m.text}` });
+        }
+    }
+    return messages;
+}
+
+// Build contents for Gemini generateContent
+function buildGeminiContents() {
+    const contents = [];
+    for (const m of conversation) {
+        if (m.speaker === 'engineer') {
+            contents.push({ role: 'user', parts: [{ text: m.text }] });
+        } else if (m.speaker === 'chatgpt' || m.speaker === 'gemini' || m.speaker === 'system') {
+            contents.push({ role: 'model', parts: [{ text: `[${m.speaker.toUpperCase()}] ${m.text}` }] });
+        }
+    }
+    if (contents.length === 0) {
+        contents.push({
+            role: 'user',
+            parts: [{ text: '技術者からの入力を待っています。' }]
+        });
+    }
+    return contents;
+}
+
+// ===== Call ChatGPT =====
+async function callChatGPTAgent() {
+    const apiKey = openaiKeyEl.value.trim();
+    const model = (openaiModelEl.value || '').trim() || 'gpt-4.1-mini';
+
+    if (!apiKey) {
+        appendSystemMessage('ChatGPT用の OpenAI API Key が未設定のため、シーズ側応答をスキップした。');
+        return;
+    }
+    appendSystemMessage('ChatGPTが先端・先行研究の観点から整理中...');
+
+    try {
+        const body = {
+            model,
+            messages: buildChatGPTMessages(),
+            temperature: 0.7
+        };
+
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + apiKey
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        const text =
+            data?.choices?.[0]?.message?.content?.trim() ||
+            'ChatGPT側の応答を取得できませんでした。レスポンス内容を確認してください。';
+        appendChatGPTMessage(text);
+    } catch (err) {
+        console.error(err);
+        appendSystemMessage('ChatGPT呼び出しでエラーが発生しました。コンソールを確認してください。');
+    }
+}
+
+// ===== Call Gemini (turn mode) =====
+async function callGeminiAgent() {
+    const apiKey = geminiKeyEl.value.trim();
+    const model = (geminiModelEl.value || '').trim() || 'gemini-1.5-flash';
+
+    if (!apiKey) {
+        appendSystemMessage('Gemini用の API Key が未設定のため、ニーズ側応答をスキップした。');
+        return;
+    }
+    appendSystemMessage('Geminiが出口シナリオと顧客像の観点から整理中...');
+
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const body = {
+            system_instruction: {
+                role: 'user',
+                parts: [{ text: geminiSystemPrompt.trim() }]
+            },
+            contents: buildGeminiContents(),
+            generationConfig: {
+                temperature: 0.7
+            }
+        };
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        const text =
+            data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim() ||
+            'Gemini側の応答を取得できませんでした。レスポンス内容を確認してください。';
+        appendGeminiMessage(text);
+    } catch (err) {
+        console.error(err);
+        appendSystemMessage('Gemini呼び出しでエラーが発生しました。コンソールを確認してください。');
+    }
+}
+
+// ===== Discussion End & Summary Report =====
+endBtn.addEventListener('click', () => {
+    if (discussionEnded) {
+        appendSystemMessage('すでに終了処理は実行済みです。');
+        return;
+    }
+    endDiscussion();
+});
+
+async function endDiscussion() {
+    discussionEnded = true;
+    appendSystemMessage('技術者からの終了宣言を受信。Geminiに議論サマリと提案レポートの生成を指示します。');
+
+    const apiKey = geminiKeyEl.value.trim();
+    const model = (geminiModelEl.value || '').trim() || 'gemini-1.5-flash';
+    if (!apiKey) {
+        appendSystemMessage('Gemini API Key が未設定のため、終了レポートを生成できません。キー設定後に再度お試しください。');
+        return;
+    }
+
+    try {
+        const transcript = conversation
+            .map(m => `${m.speaker.toUpperCase()}: ${m.text}`)
+            .join('\n');
+
+        const prompt = `
+あなたはニーズドリブン材料戦略エージェントとして行ってきた三者対話を総括する。
+以下の対話ログを読み込み、日本語でA4レポート1〜2枚程度の構成で出力せよ。
+
+要件:
+1. 「議論サマリ」: シーズ側(ChatGPT)、ニーズ側(Gemini)、技術者の主張・示唆を整理。
+2. 「新テーマ案」: 3〜7件程度。各テーマについて
+   - 狙う価値（市場・社会・環境）
+   - コア技術要素（材料・プロセス・データ）
+   - 社内強みとの整合・レバレッジポイント
+   - 想定TRL/時間軸
+3. 「新プロジェクト構成案」: 上記テーマの中から優先候補を選び、
+   - プロジェクト名（仮）
+   - フェーズ構成 (0:探索〜5:量産適用など)
+   - 必要な社内/外部パートナー
+   - 成果指標 (技術指標＋事業指標) を記載。
+4. 「次に取るべき具体アクション」: 3〜10個。
+5. 全体として、大企業材料研究部門の経営層・部門長にそのまま提示できるレベルで、論理的・コンパクトにまとめる。
+
+【対話ログ】
+${transcript}
+        `.trim();
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const body = {
+            system_instruction: {
+                role: 'user',
+                parts: [{ text: geminiSystemPrompt.trim() }]
+            },
+            contents: [
+                { role: 'user', parts: [{ text: prompt }] }
+            ],
+            generationConfig: {
+                temperature: 0.6
+            }
+        };
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        const text =
+            data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim() ||
+            'Geminiから要約レポートを取得できませんでした。レスポンスを確認してください。';
+
+        // Summary is treated as Gemini (Report)
+        renderMessage('gemini', '【最終提案レポート】\n' + text);
+    } catch (err) {
+        console.error(err);
+        appendSystemMessage('終了レポート生成中にエラーが発生しました。');
+    } finally {
+        saveConversation();
+    }
+}
+
+// ===== Clear Conversation =====
+clearBtn.addEventListener('click', () => {
+    if (!confirm('全ての会話履歴とローカルストレージを削除しますか？')) return;
+    conversation = [];
+    discussionEnded = false;
+    chatLogEl.innerHTML = '';
+    localStorage.removeItem(STORAGE_KEY);
+    appendSystemMessage('履歴をクリアしました。新しい議論を開始できます。');
+});
+
+// ===== Speech Recognition (Web Speech API) =====
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        appendSystemMessage('このブラウザは音声入力(Web Speech API)に対応していません。');
+        micBtn.disabled = true;
+        return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.textContent = '● 録音中';
+    };
+    recognition.onerror = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤 音声';
+    };
+    recognition.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤 音声';
+    };
+    recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+            const trans = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += trans;
+            } else {
+                interimTranscript += trans;
+            }
+        }
+        if (interimTranscript) {
+            userInputEl.value = (userInputEl.value + ' ' + interimTranscript).trim();
+        }
+        if (finalTranscript) {
+            userInputEl.value = (userInputEl.value + ' ' + finalTranscript).trim();
+        }
+    };
+}
+
+micBtn.addEventListener('click', () => {
+    if (!recognition) {
+        initSpeechRecognition();
+        if (!recognition) return;
+    }
+    if (isRecording) {
+        recognition.stop();
+    } else {
+        recognition.start();
+    }
+});
+
+// ===== Init =====
+loadConversation();
+initSpeechRecognition();
+</script>
+</body>
+</html>
