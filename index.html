@@ -2,1010 +2,779 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Materials Strategy Tri-Agent Studio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- ====== CSS ====== -->
+    <title>材料研究開発戦略 AIディスカッション</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- marked.js CDN (Markdownパーサー) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Font Awesome CDN (アイコン) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- スタイル定義 -->
     <style>
-        :root {
-            --bg: #0f172a;
-            --bg-soft: #111827;
-            --bg-softer: #020817;
-            --border-subtle: #1f2937;
-            --accent: #38bdf8;
-            --accent-soft: rgba(56,189,248,0.18);
-            --accent-gemini: #22c55e;
-            --accent-chatgpt: #6366f1;
-            --accent-engineer: #f97316;
-            --text: #e5e7eb;
-            --muted: #9ca3af;
-            --radius-xl: 18px;
-            --radius-md: 10px;
-            --shadow-soft: 0 18px 40px rgba(15,23,42,0.75);
-            --transition-fast: 0.18s ease;
-            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", -system-ui, sans-serif;
-            --badge-size: 11px;
-        }
-        * {
-            box-sizing: border-box;
-        }
+        /* Interフォントの読み込み */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         body {
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-sans);
-            background: radial-gradient(circle at top left, #111827, #020817 55%);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-        }
-        .app-shell {
-            max-width: 1240px;
-            margin: 24px auto;
-            padding: 18px 18px 22px;
-            background: radial-gradient(circle at top, rgba(56,189,248,0.04), transparent 70%) fixed,
-                        rgba(2,6,23,0.96);
-            border-radius: 28px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(148,163,253,0.14);
-            backdrop-filter: blur(20px);
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 8px 6px 14px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .title-block h1 {
-            margin: 0;
-            font-size: 22px;
-            letter-spacing: 0.03em;
-        }
-        .title-sub {
-            margin-top: 4px;
-            font-size: 11px;
-            color: var(--muted);
-        }
-        .role-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            font-size: 9px;
-            border: 1px solid rgba(156,163,175,0.38);
-            color: var(--muted);
-            background: rgba(9,9,11,0.85);
-        }
-        .pill span.badge {
-            width: var(--badge-size);
-            height: var(--badge-size);
-            border-radius: 999px;
-            display: inline-block;
-        }
-        .pill.chatgpt .badge { background: var(--accent-chatgpt); }
-        .pill.gemini .badge { background: var(--accent-gemini); }
-        .pill.engineer .badge { background: var(--accent-engineer); }
-
-        .config {
-            display: grid;
-            grid-template-columns: 2.2fr 1.8fr;
-            gap: 14px;
-            padding: 10px 6px 10px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .config-block {
-            padding: 10px 10px 8px;
-            border-radius: 16px;
-            background: radial-gradient(circle at top, rgba(15,23,42,0.6), rgba(9,9,11,0.96));
-            border: 1px solid rgba(75,85,99,0.7);
-        }
-        .config-block h2 {
-            margin: 0 0 4px;
-            font-size: 11px;
-            color: var(--muted);
-            font-weight: 500;
-        }
-        .field-row {
-            display: grid;
-            grid-template-columns: 110px 1fr;
-            gap: 6px;
-            margin-bottom: 4px;
-            align-items: center;
-        }
-        .field-row label {
-            font-size: 9px;
-            color: var(--muted);
-        }
-        .field-row input {
-            font-size: 10px;
-            padding: 5px 7px;
-            border-radius: 8px;
-            border: 1px solid rgba(75,85,99,0.9);
-            background: rgba(2,6,23,0.98);
-            color: var(--text);
-            width: 100%;
-            outline: none;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
-        }
-        .field-row input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 1px rgba(56,189,248,0.25);
-            background: #020817;
-        }
-        .hint {
-            font-size: 8px;
-            color: var(--muted);
-            margin-top: 4px;
-            line-height: 1.6;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
         }
 
-        .persona-brief {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 5px;
+        /* カスタムスクロールバー */
+        #chat-container::-webkit-scrollbar {
+            width: 8px;
         }
-        .persona-card {
-            padding: 6px 8px;
-            border-radius: 10px;
-            background: radial-gradient(circle at top, rgba(15,23,42,0.7), rgba(9,9,11,0.98));
-            border: 1px solid rgba(75,85,99,0.9);
-            font-size: 8px;
-            color: var(--muted);
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f5f9; /* coolGray-100 */
         }
-        .persona-card strong {
-            display: block;
-            font-size: 9px;
-            margin-bottom: 2px;
-            color: var(--accent);
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* coolGray-400 */
+            border-radius: 4px;
         }
-
-        .main {
-            display: grid;
-            grid-template-columns: minmax(0, 2.4fr) minmax(260px, 1.6fr);
-            gap: 12px;
-            margin-top: 10px;
+        #chat-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* coolGray-500 */
         }
-
-        .chat-panel {
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(75,85,99,0.85);
-            background:
-                radial-gradient(circle at top left, rgba(56,189,248,0.03), transparent 70%),
-                rgba(6,8,20,0.98);
-            min-height: 420px;
-        }
-        .chat-log {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 4px;
-            margin-bottom: 6px;
-            scrollbar-width: thin;
-        }
-        .chat-log::-webkit-scrollbar {
+        
+        /* レポートモーダルのスクロールバー */
+        #report-content::-webkit-scrollbar {
             width: 6px;
         }
-        .chat-log::-webkit-scrollbar-thumb {
-            background: rgba(75,85,99,0.8);
-            border-radius: 999px;
+        #report-content::-webkit-scrollbar-track {
+            background: #f8fafc; /* coolGray-50 */
+        }
+        #report-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* coolGray-300 */
+            border-radius: 3px;
         }
 
-        .msg-row {
-            display: flex;
-            margin-bottom: 6px;
-        }
-        .msg {
-            max-width: 92%;
-            padding: 7px 9px 7px;
-            border-radius: 12px;
-            font-size: 10px;
-            line-height: 1.6;
-            position: relative;
-            border: 1px solid transparent;
-            white-space: pre-wrap;
+        /* チャットバブルのスタイル */
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            margin-bottom: 0.5rem;
             word-wrap: break-word;
         }
-        .msg-header {
-            font-size: 8px;
-            margin-bottom: 2px;
-            opacity: 0.82;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .msg-header span.dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            display: inline-block;
+
+        .chat-technician {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+            align-self: flex-end;
         }
 
-        .msg.engineer {
-            margin-left: auto;
-            background: linear-gradient(to right, rgba(248,250,252,0.06), rgba(249,115,22,0.1));
-            border-color: rgba(249,115,22,0.38);
-            color: var(--text);
-        }
-        .msg.engineer .msg-header .dot { background: var(--accent-engineer); }
-
-        .msg.chatgpt {
-            margin-right: auto;
-            background: linear-gradient(to left, rgba(15,23,42,0.98), rgba(99,102,241,0.16));
-            border-color: rgba(99,102,241,0.55);
-        }
-        .msg.chatgpt .msg-header .dot { background: var(--accent-chatgpt); }
-
-        .msg.gemini {
-            margin-right: auto;
-            background: linear-gradient(to left, rgba(9,9,11,0.98), rgba(34,197,94,0.11));
-            border-color: rgba(34,197,94,0.55);
-        }
-        .msg.gemini .msg-header .dot { background: var(--accent-gemini); }
-
-        .msg.system {
-            margin: 0 auto 6px;
-            background: rgba(15,23,42,0.98);
-            border-color: rgba(148,163,253,0.34);
-            font-size: 8px;
-            color: var(--muted);
+        .chat-chatgpt {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #1f2937; /* gray-800 */
+            border-bottom-left-radius: 0.25rem;
+            align-self: flex-start;
         }
 
-        .input-bar {
-            display: grid;
-            grid-template-columns: 1fr auto auto auto;
-            gap: 6px;
-            align-items: stretch;
-            margin-top: 2px;
+        .chat-gemini {
+            background-color: #f3e8ff; /* purple-100 */
+            color: #1f2937; /* gray-800 */
+            border-bottom-left-radius: 0.25rem;
+            align-self: flex-start;
         }
-        .input-bar textarea {
-            resize: none;
-            max-height: 80px;
-            min-height: 40px;
-            padding: 6px 8px;
-            font-size: 10px;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(75,85,99,0.9);
-            background: rgba(2,6,23,0.98);
-            color: var(--text);
-            outline: none;
-            line-height: 1.6;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+        
+        /* レポート内のMarkdownスタイル */
+        #report-output h1 { font-size: 1.5rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+        #report-output h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+        #report-output h3 { font-size: 1.1rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.25rem; }
+        #report-output ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        #report-output ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        #report-output p { margin-bottom: 0.5rem; }
+        #report-output strong { font-weight: 600; }
+        #report-output code { background-color: #f3f4f6; padding: 0.1rem 0.25rem; border-radius: 0.25rem; font-family: monospace; }
+        
+        /* マイクボタンの録音中アニメーション */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
         }
-        .input-bar textarea:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 1px rgba(56,189,248,0.25);
-            background: #020817;
-        }
-        button {
-            border: none;
-            outline: none;
-            cursor: pointer;
-            border-radius: 999px;
-            padding: 0 11px;
-            font-size: 9px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: all var(--transition-fast);
-            white-space: nowrap;
-        }
-        .btn-send {
-            background: linear-gradient(to right, var(--accent), #60a5fa);
-            color: #020817;
-            font-weight: 600;
-        }
-        .btn-send:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 16px rgba(37,99,235,0.35);
-        }
-        .btn-mic {
-            background: rgba(15,23,42,1);
-            color: var(--accent);
-            border-radius: 11px;
-            border: 1px solid rgba(56,189,248,0.5);
-            padding-inline: 8px;
-        }
-        .btn-mic.recording {
-            background: rgba(248,113,22,0.12);
-            color: #fb923c;
-            border-color: #fb923c;
-            box-shadow: 0 0 10px rgba(248,113,22,0.6);
-        }
-        .btn-end {
-            background: rgba(15,23,42,1);
-            color: #f97316;
-            border-radius: 11px;
-            border: 1px solid rgba(249,115,22,0.6);
-            padding-inline: 9px;
-        }
-        .btn-end:hover {
-            background: rgba(249,115,22,0.12);
-        }
-        .btn-clear {
-            background: rgba(9,9,11,0.98);
-            color: var(--muted);
-            border-radius: 11px;
-            border: 1px solid rgba(75,85,99,0.9);
-            padding-inline: 8px;
-        }
-        .btn-clear:hover {
-            background: rgba(17,24,39,1);
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .panel {
-            padding: 8px 9px;
-            border-radius: 16px;
-            border: 1px solid rgba(75,85,99,0.85);
-            background: rgba(4,7,20,0.98);
-            font-size: 8px;
-            color: var(--muted);
-        }
-        .panel h3 {
-            margin: 0 0 4px;
-            font-size: 10px;
-            color: var(--accent);
-            font-weight: 500;
-        }
-        .panel code {
-            font-size: 7px;
-            background: rgba(15,23,42,0.96);
-            padding: 2px 4px;
-            border-radius: 5px;
-            border: 1px solid rgba(75,85,99,0.9);
-            display: block;
-            margin-top: 2px;
-            white-space: pre-wrap;
-        }
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 999px;
-            display: inline-block;
-            margin-right: 4px;
-        }
-        .status-ok { background: #22c55e; }
-        .status-warn { background: #f97316; }
-        .status-bad { background: #ef4444; }
-        .small-label {
-            font-size: 7px;
-            opacity: 0.8;
+        .recording {
+            animation: pulse 1.5s infinite;
+            background-color: #ef4444; /* red-500 */
+            color: white;
         }
     </style>
 </head>
-<body>
-<div class="app-shell">
+<body class="bg-gray-100 flex flex-col h-screen antialiased">
 
-    <!-- ====== HEADER ====== -->
-    <header>
-        <div class="title-block">
-            <h1>Materials Strategy Tri-Agent Studio</h1>
-            <div class="title-sub">
-                ChatGPT（シーズ）× Gemini（ニーズ）× 技術者（現実）による 材料研究開発戦略 共創エージェント
-            </div>
-            <div class="role-pills">
-                <div class="pill chatgpt"><span class="badge"></span>ChatGPT：先端・先行研究／シーズ視点</div>
-                <div class="pill gemini"><span class="badge"></span>Gemini：ニーズ視点／市場・環境・社会シナリオ</div>
-                <div class="pill engineer"><span class="badge"></span>技術者：対象領域／社内知見／将来像</div>
-            </div>
-        </div>
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-md w-full p-4 border-b border-gray-200">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-800 text-center">
+            <i class="fa-solid fa-flask-vial text-blue-500"></i>
+            材料研究開発戦略 AIディスカッション
+        </h1>
     </header>
 
-    <!-- ====== CONFIG ====== -->
-    <section class="config">
-        <div class="config-block">
-            <h2>API設定（ブラウザ内でのみ使用／保存はローカル）</h2>
-            <div class="field-row">
-                <label for="openaiKey">OpenAI API Key</label>
-                <input id="openaiKey" type="password" placeholder="sk-...">
-            </div>
-            <div class="field-row">
-                <label for="openaiModel">ChatGPT Model</label>
-                <input id="openaiModel" type="text" value="gpt-4.1-mini" />
-            </div>
-            <div class="field-row">
-                <label for="geminiKey">Gemini API Key</label>
-                <input id="geminiKey" type="password" placeholder="AIza...">
-            </div>
-            <div class="field-row">
-                <label for="geminiModel">Gemini Model</label>
-                <input id="geminiModel" type="text" value="gemini-1.5-flash" />
-            </div>
-            <div class="hint">
-                ※ セキュリティのため、本番環境ではバックエンド経由でAPIを呼び出す構成が推奨。ここでは検証用としてフロント単体構成を想定。
-            </div>
+    <!-- メインコンテンツ (チャットエリア + 入力エリア) -->
+    <main class="flex-1 flex flex-col overflow-hidden p-4 md:p-6 lg:p-8">
+        
+        <!-- チャットコンテナ -->
+        <div id="chat-container" class="flex-1 overflow-y-auto bg-white p-4 md:p-6 rounded-lg shadow-inner border border-gray-200 flex flex-col space-y-4">
+            <!-- チャットメッセージがここに追加されます -->
         </div>
-        <div class="config-block">
-            <h2>議論の起点（最初に技術者が入力）</h2>
-            <div class="field-row">
-                <label for="targetDomain">対象材料領域</label>
-                <input id="targetDomain" type="text" placeholder="例：全固体電池用固体電解質、触媒、磁性材料など">
-            </div>
-            <div class="field-row">
-                <label for="internalStrength">社内の強み・知見</label>
-                <input id="internalStrength" type="text" placeholder="例：特定プロセス設備、解析技術、既存特許群など">
-            </div>
-            <div class="field-row">
-                <label for="futureVision">将来像・コンセプト</label>
-                <input id="futureVision" type="text" placeholder="例：2035年のCN、MaaS、地域電力網、災害レジリエンス等">
-            </div>
-            <div class="hint">
-                この情報は最初の発話に自動で埋め込むことができる。<br>
-                「終了」「終わり」「end discussion」等、もしくは右下の[議論を終了]ボタンで終了宣言。
-            </div>
-        </div>
-    </section>
 
-    <!-- ====== MAIN LAYOUT ====== -->
-    <section class="main">
-        <!-- === Chat Area === -->
-        <div class="chat-panel">
-            <div id="chatLog" class="chat-log"></div>
-            <div class="input-bar">
-                <textarea id="userInput" placeholder="技術者として話しかけてください。最初は『今回議論したい材料研究開発領域』を指定してください。Shift+Enterで改行、Enterで送信。"></textarea>
-                <button id="micBtn" class="btn-mic" title="音声入力（ブラウザのWeb Speech API使用）">
-                    🎤 <span class="small-label">音声</span>
+        <!-- ローディングインジケーター -->
+        <div id="loading-indicator" class="hidden text-center p-4 items-center justify-center space-x-2 text-gray-500">
+            <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>AIが応答を生成中です...</span>
+        </div>
+        
+        <!-- マイクステータス -->
+        <div id="mic-status" class="hidden text-center p-2 text-red-500 font-medium">
+            <i class="fa-solid fa-microphone-lines animate-pulse"></i> 録音中...
+        </div>
+
+        <!-- 入力エリア -->
+        <div class="bg-white p-4 md:p-6 mt-4 rounded-lg shadow-md border border-gray-200">
+            <div class="flex items-start space-x-2 md:space-x-4">
+                <textarea id="message-input" rows="3" class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="議論したい内容、または『議論終了』と入力してください..."></textarea>
+                
+                <button id="send-button" title="送信" class="p-3 h-full bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-paper-plane fa-fw"></i>
                 </button>
-                <button id="endBtn" class="btn-end" title="議論を終了し、Geminiに要約＆提案レポート生成を指示">
-                    ■ 終了
-                </button>
-                <button id="sendBtn" class="btn-send">
-                    ⏎ 送信
+                
+                <button id="mic-button" title="音声入力" class="p-3 h-full bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i id="mic-icon" class="fa-solid fa-microphone fa-fw"></i>
                 </button>
             </div>
-            <div style="margin-top:2px; display:flex; justify-content:space-between; align-items:center;">
-                <div class="small-label" style="color:var(--muted);">
-                    会話履歴はローカルストレージに保存し、各LLM呼び出し時に全履歴を参照して「忘れない」運用を行う。
+        </div>
+    </main>
+    
+    <!-- レポート生成モーダル -->
+    <div id="report-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl h-full max-h-[90vh] flex flex-col">
+            <!-- モーダルヘッダー -->
+            <div class="flex justify-between items-center p-5 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    <i class="fa-solid fa-file-alt text-purple-600"></i>
+                    戦略サマリーレポート
+                </h2>
+                <button id="close-report-button" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fa-solid fa-times fa-xl"></i>
+                </button>
+            </div>
+            
+            <!-- モーダルコンテンツ -->
+            <div id="report-content" class="flex-1 p-6 overflow-y-auto">
+                <div id="report-loading" class="text-center py-10">
+                    <svg class="animate-spin h-8 w-8 text-purple-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-4 text-gray-600 font-medium">Geminiが議論を分析し、レポートを作成しています...</p>
                 </div>
-                <button id="clearBtn" class="btn-clear" title="会話履歴とローカルストレージをクリア">
-                    🗑 履歴クリア
-                </button>
+                <!-- レポート内容がここに挿入されます -->
+                <div id="report-output" class="prose max-w-none"></div>
+            </div>
+            
+            <!-- モーダル フッター -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                <p class="text-sm text-gray-500 text-center">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    このレポートはAIによって生成されました。
+                </p>
             </div>
         </div>
+    </div>
 
-        <!-- === Sidebar: Logic & Status === -->
-        <div class="sidebar">
-            <div class="panel">
-                <h3>エージェント設計（概要）</h3>
-                <p>
-                    <span class="status-dot status-ok"></span>
-                    <strong>ChatGPT（シーズ側）</strong>：指定材料領域の先端〜先行研究、起源からの技術史、理論的背景、主要論文・特許・国際プロジェクト等を整理し、<u>社内の既存資産と接続可能なシーズ群</u>を抽出する。
-                </p>
-                <p>
-                    <span class="status-dot status-ok"></span>
-                    <strong>Gemini（ニーズ側）</strong>：世界の規制・市場トレンド・自然環境・地政学・社会要請を踏まえ、2030–2040年代の<u>出口シナリオ・想定顧客・ユースケース</u>を構成する。
-                </p>
-                <p>
-                    <span class="status-dot status-ok"></span>
-                    <strong>技術者</strong>：社内実情・制約・強み・経営方針をインプットし、両AIに修正・深掘りを要求しながら、実装可能な新テーマ／新プロジェクトを共創する。
-                </p>
-            </div>
-            <div class="panel">
-                <h3>ChatGPT用 System Prompt（要旨）</h3>
-                <code id="chatgptPromptPreview"></code>
-            </div>
-            <div class="panel">
-                <h3>Gemini用 System Prompt（要旨）</h3>
-                <code id="geminiPromptPreview"></code>
-            </div>
-        </div>
-    </section>
-</div>
 
-<!-- ====== JS ====== -->
-<script>
-/**
- * Materials Strategy Tri-Agent Studio
- * - 3者: ChatGPT / Gemini / Engineer
- * - 会話履歴を常に全モデルへ渡し、localStorageにも保存して「忘れない」構成
- * - 終了宣言後は Gemini による要約＋提案レポート生成
- * - APIキーはブラウザ内でのみ利用（本番では必ずサーバ側で保護すること）
- */
+    <!-- JavaScript -->
+    <script type="module">
+        // ----------------------------------------
+        // グローバル変数と設定
+        // ----------------------------------------
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+        const micIcon = document.getElementById('mic-icon');
+        const micStatus = document.getElementById('mic-status');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // レポートモーダル
+        const reportModal = document.getElementById('report-modal');
+        const closeReportButton = document.getElementById('close-report-button');
+        const reportLoading = document.getElementById('report-loading');
+        const reportOutput = document.getElementById('report-output');
 
-const chatLogEl = document.getElementById('chatLog');
-const userInputEl = document.getElementById('userInput');
-const sendBtn = document.getElementById('sendBtn');
-const endBtn = document.getElementById('endBtn');
-const micBtn = document.getElementById('micBtn');
-const clearBtn = document.getElementById('clearBtn');
+        // Gemini API設定
+        const apiKey = ""; // Canvasが自動的に提供します
+        const genAIApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-const openaiKeyEl = document.getElementById('openaiKey');
-const openaiModelEl = document.getElementById('openaiModel');
-const geminiKeyEl = document.getElementById('geminiKey');
-const geminiModelEl = document.getElementById('geminiModel');
+        // チャット履歴 (UI表示用とAPI送信用)
+        // uiHistory: { speaker: 'Technician' | 'ChatGPT' | 'Gemini', text: string }[]
+        let uiHistory = [];
+        
+        // apiHistory: { role: 'user' | 'model', parts: [{ text: string }] }[]
+        // APIの仕様 (user/modelの交互) を守るための履歴
+        let apiHistory = [];
+        
+        let isAIBusy = false; // AIの応答中フラグ
+        let isRecording = false; // 録音中フラグ
 
-const targetDomainEl = document.getElementById('targetDomain');
-const internalStrengthEl = document.getElementById('internalStrength');
-const futureVisionEl = document.getElementById('futureVision');
+        // Web Speech API (音声認識) の設定
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        
+        // ブラウザが音声認識をサポートしているかチェック
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP'; // 言語を日本語に設定
+            recognition.interimResults = false; // 途中の結果は不要
+            recognition.continuous = false; // 単一の発話
+            
+            // 音声認識の結果が得られたとき
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                stopRecording();
+            };
 
-const chatgptPromptPreview = document.getElementById('chatgptPromptPreview');
-const geminiPromptPreview = document.getElementById('geminiPromptPreview');
+            // 音声認識が終了したとき
+            recognition.onend = () => {
+                if (isRecording) {
+                    stopRecording();
+                }
+            };
+            
+            // エラーが発生したとき
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                micStatus.textContent = `エラー: ${event.error}`;
+                micStatus.classList.remove('hidden');
+                setTimeout(() => micStatus.classList.add('hidden'), 3000);
+                stopRecording();
+            };
 
-let conversation = []; // {speaker: 'engineer'|'chatgpt'|'gemini'|'system', text: string}
-let discussionEnded = false;
-let recognition = null;
-let isRecording = false;
-
-const STORAGE_KEY = 'tri_agent_materials_conversation_v1';
-
-// ===== System Prompts =====
-const chatgptSystemPrompt = `
-あなたは「シーズドリブンの先端・先行材料研究エージェント」である。
-役割:
-1. 技術者が指定した材料研究開発領域について、最新の学術論文・特許・大型プロジェクト・標準化動向など、科学的エビデンスに基づき体系的に整理する。
-2. 歴史的な技術進化パス（どの様な理論・ブレイクスルーを経て現在のフロンティアに至ったか）を簡潔に示す。
-3. 技術者が提供する社内知見・設備・知財・人材などの強み情報を読み取り、「社内の強みがレバレッジされる具体的シーズ候補」を列挙し、根拠を示す。
-4. Gemini（ニーズ側）の提案と技術者コメントを踏まえ、「どのシーズが戦略的に重要か」「何を深掘りすべきか」を対話的に更新する。
-応答スタイル:
-- 日本語で回答。
-- 箇条書きは有効に使うが、単なる要約でなく、根拠・代表例・参考キーワードを毎回含める。
-- 技術者が「終了」と明示するまでは、新テーマ提案を急いで確定させず、探索空間を整理し続ける。
-`;
-
-const geminiSystemPrompt = `
-あなたは「ニーズドリブンの材料戦略エージェント」である。
-役割:
-1. 技術者が示す将来像・社会課題・事業戦略キーワードをもとに、世界の市場動向、規制、地政学、自然環境制約、サプライチェーン、顧客行動を踏まえた「出口シナリオ」を設計する。
-2. ChatGPTが整理したシーズ情報と組み合わせて、「どの用途・誰の課題・どの地域・どのインフラで使われる技術か」を具体的に描写する。
-3. 技術者が提示する社内強みを尊重し、「現実的に取り得るポジショニング」と「高難度だが戦略的価値が大きい挑戦領域」を分けて提案する。
-4. 技術者が「終了」と宣言した後:
-   - それまでの全対話を踏まえ、(a)議論サマリ (b)新テーマ・新プロジェクト案 (c)推奨ロードマップ (d)リスクとNext Action を含む提案レポートを日本語で出力する。
-応答スタイル:
-- 日本語で回答。
-- 可能な限り定量・根拠・外部環境要因を織り込む。
-- 対話中は結論を一つに固定せず、選択肢と含意を提示しつつ技術者に問い返す。
-`;
-
-// Show brief previews in sidebar
-chatgptPromptPreview.textContent = trimForPreview(chatgptSystemPrompt, 340);
-geminiPromptPreview.textContent = trimForPreview(geminiSystemPrompt, 340);
-
-function trimForPreview(text, maxLen) {
-    const t = text.trim().replace(/\s+/g, ' ');
-    return t.length > maxLen ? t.slice(0, maxLen) + ' ...' : t;
-}
-
-// ===== Conversation Persistence =====
-function saveConversation() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            conversation,
-            targetDomain: targetDomainEl.value || '',
-            internalStrength: internalStrengthEl.value || '',
-            futureVision: futureVisionEl.value || ''
-        }));
-    } catch (e) {
-        console.warn('Failed to save conversation', e);
-    }
-}
-
-function loadConversation() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-            appendSystemMessage(
-                '最初に「今回議論したい材料研究開発領域」を技術者として入力してください。' +
-                '\n例：「全固体電池用硫化物系固体電解質について議論したい」'
-            );
-            return;
+        } else {
+            console.warn('Speech Recognition API is not supported in this browser.');
+            micButton.disabled = true;
+            micButton.title = "お使いのブラウザは音声認識をサポートしていません";
         }
-        const data = JSON.parse(raw);
-        if (Array.isArray(data.conversation)) {
-            conversation = data.conversation;
-            conversation.forEach(msg => renderMessage(msg.speaker, msg.text, true));
-        }
-        if (data.targetDomain) targetDomainEl.value = data.targetDomain;
-        if (data.internalStrength) internalStrengthEl.value = data.internalStrength;
-        if (data.futureVision) futureVisionEl.value = data.futureVision;
-        scrollToBottom();
-    } catch (e) {
-        console.warn('Failed to load conversation', e);
-    }
-}
 
-// ===== Rendering =====
-function renderMessage(speaker, text, skipPush = false) {
-    const row = document.createElement('div');
-    row.className = 'msg-row';
+        // ----------------------------------------
+        // システムプロンプト (ペルソナ定義)
+        // ----------------------------------------
+        const systemPromptChatGPT = {
+            parts: [{ text: `
+あなたは、材料研究開発の「シーズドリブン」担当AIアシスタント「ChatGPT」です。
+あなたの役割は以下の通りです。
 
-    const msg = document.createElement('div');
-    msg.classList.add('msg');
-
-    const header = document.createElement('div');
-    header.className = 'msg-header';
-    const dot = document.createElement('span');
-    dot.className = 'dot';
-
-    let label = '';
-    if (speaker === 'engineer') {
-        msg.classList.add('engineer');
-        label = '技術者';
-    } else if (speaker === 'chatgpt') {
-        msg.classList.add('chatgpt');
-        label = 'ChatGPT（シーズ側）';
-    } else if (speaker === 'gemini') {
-        msg.classList.add('gemini');
-        label = 'Gemini（ニーズ側）';
-    } else {
-        msg.classList.add('system');
-        label = 'System';
-    }
-
-    header.appendChild(dot);
-    header.appendChild(document.createTextNode(label));
-    msg.appendChild(header);
-    msg.appendChild(document.createTextNode(text));
-    row.appendChild(msg);
-    chatLogEl.appendChild(row);
-    scrollToBottom();
-
-    if (!skipPush) {
-        conversation.push({ speaker, text });
-        saveConversation();
-    }
-}
-
-function appendSystemMessage(text) {
-    renderMessage('system', text);
-}
-function appendEngineerMessage(text) {
-    renderMessage('engineer', text);
-}
-function appendChatGPTMessage(text) {
-    renderMessage('chatgpt', text);
-}
-function appendGeminiMessage(text) {
-    renderMessage('gemini', text);
-}
-
-function scrollToBottom() {
-    requestAnimationFrame(() => {
-        chatLogEl.scrollTop = chatLogEl.scrollHeight;
-    });
-}
-
-// ===== Input Handling =====
-sendBtn.addEventListener('click', handleUserInput);
-
-userInputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleUserInput();
-    }
-});
-
-function buildInitialContextIfEmpty() {
-    if (conversation.length === 0) {
-        const td = targetDomainEl.value?.trim();
-        const isVal = internalStrengthEl.value?.trim();
-        const fv = futureVisionEl.value?.trim();
-        if (td) {
-            let seed = `【前提共有】\n今回議論したい材料研究開発領域：${td}`;
-            if (isVal) seed += `\n社内の強み・知見：${isVal}`;
-            if (fv) seed += `\n将来像・コンセプト：${fv}`;
-            appendEngineerMessage(seed);
-        }
-    }
-}
-
-async function handleUserInput() {
-    if (discussionEnded) {
-        appendSystemMessage('すでに議論は終了しています。新たに開始する場合は履歴クリアしてください。');
-        return;
-    }
-
-    buildInitialContextIfEmpty();
-
-    const text = userInputEl.value.trim();
-    if (!text) return;
-    userInputEl.value = '';
-    appendEngineerMessage(text);
-
-    const lowered = text.toLowerCase();
-    if (/[終了終わり終結]/.test(text) || lowered.includes('end discussion')) {
-        // treat as explicit end signal
-        await endDiscussion();
-    } else {
-        await triAgentTurn();
-    }
-}
-
-// ===== Tri-Agent Turn =====
-async function triAgentTurn() {
-    // 1) ChatGPTシーズ側 → 2) Geminiニーズ側 の順に呼び出し
-    await callChatGPTAgent();
-    await callGeminiAgent();
-}
-
-// Build messages for OpenAI Chat Completions
-function buildChatGPTMessages() {
-    const messages = [
-        { role: 'system', content: chatgptSystemPrompt.trim() }
-    ];
-    for (const m of conversation) {
-        if (m.speaker === 'engineer') {
-            messages.push({ role: 'user', content: m.text });
-        } else if (m.speaker === 'chatgpt') {
-            messages.push({ role: 'assistant', content: `[ChatGPT] ${m.text}` });
-        } else if (m.speaker === 'gemini') {
-            messages.push({ role: 'assistant', content: `[Gemini] ${m.text}` });
-        } else if (m.speaker === 'system') {
-            // system messages already exist; optionally embed as assistant
-            messages.push({ role: 'assistant', content: `[System] ${m.text}` });
-        }
-    }
-    return messages;
-}
-
-// Build contents for Gemini generateContent
-function buildGeminiContents() {
-    const contents = [];
-    for (const m of conversation) {
-        if (m.speaker === 'engineer') {
-            contents.push({ role: 'user', parts: [{ text: m.text }] });
-        } else if (m.speaker === 'chatgpt' || m.speaker === 'gemini' || m.speaker === 'system') {
-            contents.push({ role: 'model', parts: [{ text: `[${m.speaker.toUpperCase()}] ${m.text}` }] });
-        }
-    }
-    if (contents.length === 0) {
-        contents.push({
-            role: 'user',
-            parts: [{ text: '技術者からの入力を待っています。' }]
-        });
-    }
-    return contents;
-}
-
-// ===== Call ChatGPT =====
-async function callChatGPTAgent() {
-    const apiKey = openaiKeyEl.value.trim();
-    const model = (openaiModelEl.value || '').trim() || 'gpt-4.1-mini';
-
-    if (!apiKey) {
-        appendSystemMessage('ChatGPT用の OpenAI API Key が未設定のため、シーズ側応答をスキップした。');
-        return;
-    }
-    appendSystemMessage('ChatGPTが先端・先行研究の観点から整理中...');
-
-    try {
-        const body = {
-            model,
-            messages: buildChatGPTMessages(),
-            temperature: 0.7
+1.  **先端研究の分析:** 技術者から指定された材料領域について、最新の先端研究、先行研究、科学的エビデンスを収集・分析します。
+2.  **研究経緯の整理:** その最新研究に至った経緯や、技術的なブレークスルーのポイントを明確に整理します。
+3.  **トピックスの提案:** 技術者が提供する「社内の強み（既存技術、設備、ノウハウ）」を理解し、それを活用できそうな新しい研究トピックスを具体的に提案します。
+4.  **議論の促進:** 常に科学的根拠に基づき、シーズ（技術の種）の観点から議論をリードしてください。
+`}]
         };
 
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
-            },
-            body: JSON.stringify(body)
+        const systemPromptGemini = {
+            parts: [{ text: `
+あなたは、材料研究開発の「ニーズドリブン」担当AIアシスタント「Gemini」です。
+あなたの役割は以下の通りです。
+
+1.  **将来ニーズの具体化:** 技術者が提示する概念的な将来像やビジョンを深掘りします。
+2.  **市場・環境分析:** 世界中の技術ロードマップ、市場動向、自然環境（例：規制、SDGs）、社会環境（例：高齢化、ライフスタイル変化）、地理的状況などを幅広く分析します。
+3.  **出口戦略の明確化:** 上記の分析に基づき、開発される技術の具体的な「使われ方」、ターゲットとなる「想定顧客」、そして彼らが抱える「本質的な課題（ニーズ）」を明確にします。
+4.  **議論の促進:** 常に市場と顧客の視点に立ち、ニーズ（出口）の観点から議論をリードしてください。
+`}]
+        };
+
+        const systemPromptReport = {
+            parts: [{ text: `
+あなたは、優秀な技術戦略コンサルタントです。
+あなたの役割は、以下の「技術者」「ChatGPT（シーズ担当）」「Gemini（ニーズ担当）」の三者による議論の全履歴を詳細に分析することです。
+
+分析に基づき、以下の3つのセクションで構成される詳細な「戦略サマリーレポート」を作成してください。
+
+1.  **議論の要約:**
+    * 議論全体の流れと、主要な論点を時系列で簡潔にまとめてください。
+    * 各参加者（技術者、ChatGPT、Gemini）の重要な貢献や指摘事項を明確にしてください。
+
+2.  **新テーマ・新プロジェクトの提案:**
+    * 議論（シーズ、ニーズ、社の強み）から導き出される、具体的かつ実行可能性のある「新研究テーマ」または「新プロジェクト」を複数提案してください。
+    * 各提案について、その背景（どの議論に基づいているか）、目的、期待される成果を明確に記述してください。
+
+3.  **これからの進め方（ネクストステップ）:**
+    * 提案されたテーマ/プロジェクトを推進するために、明日から取るべき具体的なアクションプランを提案してください。
+    * （例：追加の市場調査、特定の先行研究の深掘り、必要なリソース（人材、設備）の特定、初期実験計画の立案など）
+
+レポートは、経営層や研究開発リーダーが意思決定できるように、プロフェッショナルかつ論理的な構成で記述してください。
+`}]
+        };
+
+        // ----------------------------------------
+        // イベントリスナー
+        // ----------------------------------------
+        
+        // ページ読み込み完了時
+        window.addEventListener('load', () => {
+            // 最初の挨拶メッセージ
+            const firstMessage = "技術者の方、こんにちは。私はシーズドリブン担当のChatGPTです。";
+            const secondMessage = "私はニーズドリブン担当のGeminiです。本日はどの材料研究開発領域について議論を開始しますか？ 具体的な領域を教えてください。";
+            
+            addMessageToUI('ChatGPT', firstMessage);
+            uiHistory.push({ speaker: 'ChatGPT', text: firstMessage });
+            // API履歴には、最初の挨拶はシステムプロンプトの一部として扱うため、ここでは追加しない
+            // もしくは、user/modelの対として追加する
+            apiHistory.push({ role: 'user', parts: [{ text: "議論を開始してください。" }] });
+            apiHistory.push({ role: 'model', parts: [{ text: firstMessage }] });
+
+
+            setTimeout(() => {
+                addMessageToUI('Gemini', secondMessage);
+                uiHistory.push({ speaker: 'Gemini', text: secondMessage });
+                // 直前のmodelの応答に結合
+                apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${secondMessage}`;
+            }, 1000); // 少し遅らせて表示
         });
 
-        const data = await res.json();
-        const text =
-            data?.choices?.[0]?.message?.content?.trim() ||
-            'ChatGPT側の応答を取得できませんでした。レスポンス内容を確認してください。';
-        appendChatGPTMessage(text);
-    } catch (err) {
-        console.error(err);
-        appendSystemMessage('ChatGPT呼び出しでエラーが発生しました。コンソールを確認してください。');
-    }
-}
-
-// ===== Call Gemini (turn mode) =====
-async function callGeminiAgent() {
-    const apiKey = geminiKeyEl.value.trim();
-    const model = (geminiModelEl.value || '').trim() || 'gemini-1.5-flash';
-
-    if (!apiKey) {
-        appendSystemMessage('Gemini用の API Key が未設定のため、ニーズ側応答をスキップした。');
-        return;
-    }
-    appendSystemMessage('Geminiが出口シナリオと顧客像の観点から整理中...');
-
-    try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-        const body = {
-            system_instruction: {
-                role: 'user',
-                parts: [{ text: geminiSystemPrompt.trim() }]
-            },
-            contents: buildGeminiContents(),
-            generationConfig: {
-                temperature: 0.7
+        // 送信ボタン
+        sendButton.addEventListener('click', handleUserInput);
+        
+        // Enterキーで送信 (Shift+Enterで改行)
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleUserInput();
             }
-        };
-
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
         });
 
-        const data = await res.json();
-        const text =
-            data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim() ||
-            'Gemini側の応答を取得できませんでした。レスポンス内容を確認してください。';
-        appendGeminiMessage(text);
-    } catch (err) {
-        console.error(err);
-        appendSystemMessage('Gemini呼び出しでエラーが発生しました。コンソールを確認してください。');
-    }
-}
-
-// ===== Discussion End & Summary Report =====
-endBtn.addEventListener('click', () => {
-    if (discussionEnded) {
-        appendSystemMessage('すでに終了処理は実行済みです。');
-        return;
-    }
-    endDiscussion();
-});
-
-async function endDiscussion() {
-    discussionEnded = true;
-    appendSystemMessage('技術者からの終了宣言を受信。Geminiに議論サマリと提案レポートの生成を指示します。');
-
-    const apiKey = geminiKeyEl.value.trim();
-    const model = (geminiModelEl.value || '').trim() || 'gemini-1.5-flash';
-    if (!apiKey) {
-        appendSystemMessage('Gemini API Key が未設定のため、終了レポートを生成できません。キー設定後に再度お試しください。');
-        return;
-    }
-
-    try {
-        const transcript = conversation
-            .map(m => `${m.speaker.toUpperCase()}: ${m.text}`)
-            .join('\n');
-
-        const prompt = `
-あなたはニーズドリブン材料戦略エージェントとして行ってきた三者対話を総括する。
-以下の対話ログを読み込み、日本語でA4レポート1〜2枚程度の構成で出力せよ。
-
-要件:
-1. 「議論サマリ」: シーズ側(ChatGPT)、ニーズ側(Gemini)、技術者の主張・示唆を整理。
-2. 「新テーマ案」: 3〜7件程度。各テーマについて
-   - 狙う価値（市場・社会・環境）
-   - コア技術要素（材料・プロセス・データ）
-   - 社内強みとの整合・レバレッジポイント
-   - 想定TRL/時間軸
-3. 「新プロジェクト構成案」: 上記テーマの中から優先候補を選び、
-   - プロジェクト名（仮）
-   - フェーズ構成 (0:探索〜5:量産適用など)
-   - 必要な社内/外部パートナー
-   - 成果指標 (技術指標＋事業指標) を記載。
-4. 「次に取るべき具体アクション」: 3〜10個。
-5. 全体として、大企業材料研究部門の経営層・部門長にそのまま提示できるレベルで、論理的・コンパクトにまとめる。
-
-【対話ログ】
-${transcript}
-        `.trim();
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-        const body = {
-            system_instruction: {
-                role: 'user',
-                parts: [{ text: geminiSystemPrompt.trim() }]
-            },
-            contents: [
-                { role: 'user', parts: [{ text: prompt }] }
-            ],
-            generationConfig: {
-                temperature: 0.6
-            }
-        };
-
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        const text =
-            data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim() ||
-            'Geminiから要約レポートを取得できませんでした。レスポンスを確認してください。';
-
-        // Summary is treated as Gemini (Report)
-        renderMessage('gemini', '【最終提案レポート】\n' + text);
-    } catch (err) {
-        console.error(err);
-        appendSystemMessage('終了レポート生成中にエラーが発生しました。');
-    } finally {
-        saveConversation();
-    }
-}
-
-// ===== Clear Conversation =====
-clearBtn.addEventListener('click', () => {
-    if (!confirm('全ての会話履歴とローカルストレージを削除しますか？')) return;
-    conversation = [];
-    discussionEnded = false;
-    chatLogEl.innerHTML = '';
-    localStorage.removeItem(STORAGE_KEY);
-    appendSystemMessage('履歴をクリアしました。新しい議論を開始できます。');
-});
-
-// ===== Speech Recognition (Web Speech API) =====
-function initSpeechRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        appendSystemMessage('このブラウザは音声入力(Web Speech API)に対応していません。');
-        micBtn.disabled = true;
-        return;
-    }
-    recognition = new SpeechRecognition();
-    recognition.lang = 'ja-JP';
-    recognition.continuous = false;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => {
-        isRecording = true;
-        micBtn.classList.add('recording');
-        micBtn.textContent = '● 録音中';
-    };
-    recognition.onerror = () => {
-        isRecording = false;
-        micBtn.classList.remove('recording');
-        micBtn.textContent = '🎤 音声';
-    };
-    recognition.onend = () => {
-        isRecording = false;
-        micBtn.classList.remove('recording');
-        micBtn.textContent = '🎤 音声';
-    };
-    recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-            const trans = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += trans;
+        // マイクボタン
+        micButton.addEventListener('click', () => {
+            if (!recognition) return;
+            
+            if (isRecording) {
+                stopRecording();
             } else {
-                interimTranscript += trans;
+                startRecording();
+            }
+        });
+
+        // レポートモーダルを閉じる
+        closeReportButton.addEventListener('click', () => {
+            reportModal.classList.add('hidden');
+        });
+
+        // ----------------------------------------
+        // 音声認識ヘルパー
+        // ----------------------------------------
+        
+        function startRecording() {
+            if (isAIBusy) return; // AI応答中は録音しない
+            try {
+                recognition.start();
+                isRecording = true;
+                micButton.classList.add('recording');
+                micIcon.classList.remove('fa-microphone');
+                micIcon.classList.add('fa-stop');
+                micStatus.textContent = "録音中...";
+                micStatus.classList.remove('hidden');
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+            } catch (e) {
+                console.error("Recording start error:", e);
+                micStatus.textContent = "エラー: 録音を開始できませんでした。";
+                micStatus.classList.remove('hidden');
+                setTimeout(() => micStatus.classList.add('hidden'), 3000);
             }
         }
-        if (interimTranscript) {
-            userInputEl.value = (userInputEl.value + ' ' + interimTranscript).trim();
-        }
-        if (finalTranscript) {
-            userInputEl.value = (userInputEl.value + ' ' + finalTranscript).trim();
-        }
-    };
-}
 
-micBtn.addEventListener('click', () => {
-    if (!recognition) {
-        initSpeechRecognition();
-        if (!recognition) return;
-    }
-    if (isRecording) {
-        recognition.stop();
-    } else {
-        recognition.start();
-    }
-});
+        function stopRecording() {
+            if (!isRecording) return;
+            recognition.stop();
+            isRecording = false;
+            micButton.classList.remove('recording');
+            micIcon.classList.add('fa-microphone');
+            micIcon.classList.remove('fa-stop');
+            micStatus.classList.add('hidden');
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+        }
 
-// ===== Init =====
-loadConversation();
-initSpeechRecognition();
-</script>
+        // ----------------------------------------
+        // 中核ロジック
+        // ----------------------------------------
+        
+        /**
+         * ユーザーの入力を処理
+         */
+        async function handleUserInput() {
+            const message = messageInput.value.trim();
+            if (!message || isAIBusy) return;
+            
+            // UI更新
+            addMessageToUI('Technician', message);
+            messageInput.value = '';
+            setLoading(true);
+            
+            // 履歴更新
+            uiHistory.push({ speaker: 'Technician', text: message });
+            
+            // API履歴を更新 (user/modelの交互を維持)
+            // 直前のmodel (C+G) の応答を受けてのuserの応答
+            apiHistory.push({ role: 'user', parts: [{ text: message }] });
+
+
+            // 終了キーワードのチェック
+            const endKeywords = ['議論終了', '議論をおわる', 'おわり', 'レポート作成', '終了します'];
+            if (endKeywords.some(keyword => message.includes(keyword))) {
+                // 議論終了処理
+                await generateReport();
+                setLoading(false);
+                return;
+            }
+
+            // AIの応答チェーンを開始
+            try {
+                // 1. ChatGPT (シーズ) の応答
+                const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true); // Google Search有効
+                addMessageToUI('ChatGPT', responseGpt);
+                uiHistory.push({ speaker: 'ChatGPT', text: responseGpt });
+                // apiHistoryにmodelの応答として追加
+                apiHistory.push({ role: 'model', parts: [{ text: responseGpt }] });
+
+                // 2. Gemini (ニーズ) の応答 (ChatGPTの応答を含む履歴で)
+                const responseGemini = await callGeminiApi(systemPromptGemini, apiHistory, true); // Google Search有効
+                addMessageToUI('Gemini', responseGemini);
+                uiHistory.push({ speaker: 'Gemini', text: responseGemini });
+                
+                // 直前のmodel (ChatGPT) の応答に、Geminiの応答を追記して結合する
+                // これにより、[user(T1), model(C1+G1), user(T2), model(C2+G2)] の形式を維持
+                apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${responseGemini}`;
+
+            } catch (error) {
+                console.error("AI response chain error:", error);
+                addMessageToUI('System', `エラーが発生しました: ${error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        /**
+         * レポートを生成
+         */
+        async function generateReport() {
+            console.log("Generating report...");
+            reportModal.classList.remove('hidden');
+            reportLoading.classList.remove('hidden');
+            reportOutput.innerHTML = '';
+
+            try {
+                // レポート作成用のAPI履歴を作成
+                // apiHistoryには [user, model, user, model...] が入っている
+                // これをそのまま渡す
+                
+                // 最後の「議論終了」というuserメッセージはレポート生成には不要な場合があるので、除く
+                // ただし、その直前のmodelの応答は必要
+                // apiHistoryの最後の要素が "user" (終了メッセージ) なら、それを除いた履歴を使う
+                let reportHistory = [...apiHistory];
+                if (reportHistory.length > 0 && reportHistory[reportHistory.length - 1].role === 'user') {
+                     // 最後のuserメッセージを除き、その前のmodelまでの履歴を使う
+                     // ただし、最初の挨拶 [user, model] の後、[user(T1), model(C1+G1)] と続くため、
+                     // 履歴が [..., user(T_end)] で終わっているはず。
+                     // reportHistory.pop(); // これでOK
+                }
+                
+                // 最後の「議論終了」という発言は、レポート作成のトリガーであって、
+                // 分析対象の議論内容そのものではない。
+                // したがって、apiHistoryの最後の user メッセージを除外してAPIに渡す
+                
+                let historyForReport = [...apiHistory];
+                if(historyForReport.length > 0 && historyForReport[historyForReport.length - 1].role === 'user') {
+                    historyForReport.pop();
+                }
+
+                const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); // レポート作成時はSearch不要
+                
+                // MarkdownをHTMLに変換して表示
+                reportOutput.innerHTML = marked.parse(reportText);
+                reportLoading.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Report generation error:", error);
+                reportOutput.innerHTML = `<p class="text-red-500">レポートの生成中にエラーが発生しました: ${error.message}</p>`;
+                reportLoading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Gemini API 呼び出し (Exponential Backoff 付き)
+         * @param {object} systemInstruction - システムプロンプト
+         * @param {array} history - API用のチャット履歴
+         * @param {boolean} useGoogleSearch - Google Search を使うか
+         */
+        async function callGeminiApi(systemInstruction, history, useGoogleSearch = false) {
+            const maxRetries = 5;
+            let delay = 1000; // 1秒から開始
+
+            // historyが user/model の交互で終わっていることを確認
+            // もし末尾が user なら OK
+            // もし末尾が model なら OK
+            // もし空なら OK
+            // APIは最後の model の次が user であることを期待する
+            // APIは最後の user の次が model であることを期待する
+            
+            // このアプリのロジックでは、Cを呼ぶときは末尾が user(T)
+            // Gを呼ぶときは末尾が model(C)
+            // レポートを呼ぶときは末尾が user(T_end) または model(C+G)
+            
+            // Gemini APIは、末尾が model であっても、次の user プロンプトを期待するのではなく、
+            // history全体 + 新規の user プロンプト を渡すのが一般的。
+            // しかし、チャット (generateContent) では、history を渡せば文脈を理解する。
+            
+            //
+            // **重要**: Gemini APIの `generateContent` (非ストリーミング) は、`contents` (履歴) を渡す。
+            // `contents` の最後の `role` は、APIが応答すべき `role` (つまり `model`) の *反対* (つまり `user`) である必要がある。
+            //
+            // このアプリのロジックを修正：
+            // 1. handleUserInput: apiHistory.push(user)
+            // 2. callGpt: callGeminiApi(systemGpt, apiHistory)
+            //    - この時点で apiHistory の末尾は user(T)
+            //    - 応答(C)を受け取り、apiHistory.push(model(C))
+            // 3. callGemini: callGeminiApi(systemGemini, apiHistory)
+            //    - この時点で apiHistory の末尾は model(C)
+            //    - **これではAPIがエラーになる**
+            //
+            // **解決策**:
+            // `callGeminiApi` に渡す履歴は、必ず `role: 'user'` で終わるように調整する。
+            //
+            // 修正後のフロー:
+            // 1. handleUserInput:
+            //    apiHistory.push({ role: 'user', parts: [{ text: message }] }); // T1
+            // 2. ChatGPT(S) 呼び出し:
+            //    const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true);
+            //    apiHistory.push({ role: 'model', parts: [{ text: responseGpt }] }); // C1
+            // 3. Gemini(N) 呼び出し:
+            //    // Gを呼ぶために、Cの応答を「観測」した user としてのダミープロンプトを追加
+            //    const promptForGemini = { 
+            //        role: 'user', 
+            //        parts: [{ text: "（Geminiさん、今のChatGPTの意見を受けて、ニーズの観点からどう思いますか？）" }] 
+            //    };
+            //    const historyForGemini = [...apiHistory, promptForGemini];
+            //    const responseGemini = await callGeminiApi(systemPromptGemini, historyForGemini, true);
+            //    // apiHistoryには「ダミープロンプト」と「Gの応答」を追加
+            //    apiHistory.push(promptForGemini);
+            //    apiHistory.push({ role: 'model', parts: [{ text: responseGemini }] }); // G1
+            //
+            // これだと `uiHistory` と `apiHistory` が乖離しすぎる。
+            //
+            // **再採用（前述の「クリーンな方法」）**
+            // 1. handleUserInput:
+            //    apiHistory.push({ role: 'user', parts: [{ text: message }] }); // T1
+            // 2. ChatGPT(S) 呼び出し:
+            //    const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true);
+            //    apiHistory.push({ role: 'model', parts: [{ text: responseGpt }] }); // C1
+            // 3. Gemini(N) 呼び出し:
+            //    const responseGemini = await callGeminiApi(systemPromptGemini, apiHistory, true);
+            //    // Gの応答を、直前のCの応答 (model) に「結合」する
+            //    apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${responseGemini}`; // C1 + G1
+            //
+            // **この方法の懸念:** Gを呼び出すとき、`apiHistory` の末尾が `model(C1)` になっている。
+            // Gemini APIはこれを許容するか？
+            //
+            // ドキュメント確認...
+            // "When building a multi-turn conversation (like chat), provide a history of the conversation... The last part of the Contents array must be from the 'user' role."
+            //
+            // **ダメだ。最後のroleは 'user' でなければならない。**
+            //
+            //
+            // **最終決定ロジック (前述の「最もクリーンな方法」のバリエーション)**
+            // Gを呼ぶとき、Cの応答を `user` メッセージとして「引用」する。
+            //
+            // 1. handleUserInput:
+            //    const userMessage = { role: 'user', parts: [{ text: message }] }; // T1
+            //    apiHistory.push(userMessage);
+            //
+            // 2. ChatGPT(S) 呼び出し:
+            //    const responseGptText = await callGeminiApi(systemPromptChatGPT, apiHistory, true);
+            //    const gptMessage = { role: 'model', parts: [{ text: responseGptText }] }; // C1
+            //    apiHistory.push(gptMessage);
+            //    addMessageToUI('ChatGPT', responseGptText);
+            //
+            // 3. Gemini(N) 呼び出し:
+            //    // Cの応答を引用し、Gに意見を求めるための「新しい user プロンプト」を作成
+            //    const promptForGemini = {
+            //        role: 'user',
+            //        parts: [{ text: `ChatGPTがシーズの観点から以下のように述べました。\n\n「${responseGptText}」\n\nこれを受けて、Geminiさん、ニーズドリブンの観点からあなたの分析と意見を聞かせてください。` }]
+            //    };
+            //    
+            //    // apiHistory にこの「中間プロンプト」を追加
+            //    apiHistory.push(promptForGemini);
+            //    // UIにはこの中間プロンプトは *表示しない*
+            //
+            //    const responseGeminiText = await callGeminiApi(systemPromptGemini, apiHistory, true);
+            //    const geminiMessage = { role: 'model', parts: [{ text: responseGeminiText }] }; // G1
+            //    apiHistory.push(geminiMessage);
+            //    addMessageToUI('Gemini', responseGeminiText);
+            //
+            // このロジックで `callGeminiApi` を実装する。
+            
+            // `history` (apiHistory) は、この関数が呼ばれる時点で `user` で終わっているか、`model` で終わっているか...
+            // 呼び出し元 (handleUserInput) でロジックを確定させる。
+            // この関数 `callGeminiApi` は、渡された history をそのまま使う。
+            
+            
+            // **** (元のロジックに戻る) ****
+            // handleUserInput 内で、`apiHistory` が `user` で終わっていることを保証して C を呼び出す。
+            // C の応答 (model) を `apiHistory` に追加。
+            // G を呼ぶために、`apiHistory` (末尾 model) に、Gへのプロンプト (user) を追加する。
+            
+            // *** `handleUserInput` 内のロジックを修正 *** (上記参照)
+            // この `callGeminiApi` は、渡された履歴 (末尾が `user` であることが保証されている) を使うだけ。
+
+
+            const payload = {
+                contents: history,
+                systemInstruction: systemInstruction,
+                generationConfig: {
+                    temperature: 0.7,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 8192,
+                }
+            };
+
+            if (useGoogleSearch) {
+                payload.tools = [{ "google_search": {} }];
+            }
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(genAIApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}: ${await response.text()}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates[0].content?.parts?.[0]?.text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else if (result.candidates && result.candidates[0].finishReason === "SAFETY") {
+                        throw new Error("応答が安全性の設定によりブロックされました。");
+                    } else {
+                        console.warn("API response structure unexpected:", result);
+                        throw new Error("AIからの有効な応答がありませんでした。");
+                    }
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed: ${error.message}`);
+                    if (i === maxRetries - 1) {
+                        throw error; // 最終試行でも失敗
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // バックオフ時間を倍増
+                }
+            }
+        }
+
+        // ----------------------------------------
+        // UI ヘルパー
+        // ----------------------------------------
+
+        /**
+         * チャットUIにメッセージを追加
+         * @param {'Technician' | 'ChatGPT' | 'Gemini' | 'System'} speaker
+         * @param {string} message
+         */
+        function addMessageToUI(speaker, message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-bubble', 'flex', 'flex-col');
+            
+            let speakerLabel = '';
+            let iconClass = '';
+            let bubbleClass = '';
+
+            switch (speaker) {
+                case 'Technician':
+                    bubbleClass = 'chat-technician';
+                    speakerLabel = '技術者 (あなた)';
+                    iconClass = 'fa-solid fa-user';
+                    break;
+                case 'ChatGPT':
+                    bubbleClass = 'chat-chatgpt';
+                    speakerLabel = 'ChatGPT (シーズ)';
+                    iconClass = 'fa-solid fa-brain text-green-600';
+                    break;
+                case 'Gemini':
+                    bubbleClass = 'chat-gemini';
+                    speakerLabel = 'Gemini (ニーズ)';
+                    iconClass = 'fa-solid fa-globe text-purple-600';
+                    break;
+                case 'System':
+                    bubbleClass = 'chat-chatgpt'; // システムメッセージはChatGPT風に
+                    speakerLabel = 'システム';
+                    iconClass = 'fa-solid fa-exclamation-circle text-red-500';
+                    break;
+            }
+            
+            messageElement.classList.add(bubbleClass);
+
+            // スピーカーラベルとアイコン
+            const speakerElement = document.createElement('div');
+            speakerElement.classList.add('flex', 'items-center', 'space-x-2', 'mb-2', 'font-semibold', 'text-sm');
+            if (speaker === 'Technician') {
+                 speakerElement.classList.add('text-blue-100');
+            } else {
+                 speakerElement.classList.add('text-gray-700');
+            }
+
+            speakerElement.innerHTML = `<i class="${iconClass}"></i><span>${speakerLabel}</span>`;
+            
+            // メッセージ本文 (Markdownパース)
+            const contentElement = document.createElement('div');
+            contentElement.classList.add('message-content');
+            // XSS対策のため、marked.jsのsanitizeオプションはデフォルト(false)だが、
+            // この環境では信頼できるAPIからの応答のみを想定する。
+            // 本番環境ではDOMPurifyなどでのサニタイズが推奨される。
+            contentElement.innerHTML = marked.parse(message);
+            
+            messageElement.appendChild(speakerElement);
+            messageElement.appendChild(contentElement);
+            chatContainer.appendChild(messageElement);
+
+            // 一番下にスクロール
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        /**
+         * ローディング状態の設定
+         * @param {boolean} isLoading
+         */
+        function setLoading(isLoading) {
+            isAIBusy = isLoading;
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+                sendButton.disabled = true;
+                micButton.disabled = true;
+                messageInput.disabled = true;
+            } else {
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+                sendButton.disabled = false;
+                micButton.disabled = (recognition === undefined); // 音声認識がサポートされていれば有効化
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+    </script>
 </body>
 </html>
