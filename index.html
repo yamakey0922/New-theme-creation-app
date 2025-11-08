@@ -116,6 +116,14 @@
             background-color: #ef4444; /* red-500 */
             color: white;
         }
+        
+        /* --- 修正点 1: タイピングカーソルのスタイル --- */
+        .typing-cursor {
+            display: inline-block;
+            font-weight: 300;
+            color: #94a3b8; /* coolGray-400 */
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -284,6 +292,9 @@
         
         let isAIBusy = false; // AIの応答中フラグ
         let isRecording = false; // 録音中フラグ
+        
+        // --- 修正点 2: タイピングエフェクトの速度 ---
+        const typingSpeedMs = 20; // 1文字あたり20ミリ秒
 
         // Web Speech API (音声認識) の設定
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -331,7 +342,7 @@
 あなたの役割は以下の通りです。
 1.  **先端研究の分析:** 技術者から指定された材料領域について、最新の先端研究、先行研究、科学的エビデンスを収集・分析します。
 2.  **研究経緯の整理:** その最新研究に至った経緯や、技術的なブレークスルーのポイントを明確に整理します。
-3.  **トピックスの提案:** 技術者が提供する「社内の強み（既存技術、設備、ノウハウ）」を理解し、それを活用できそうな新しい研究トピックスを具体的に提案します。
+3.  **トピックスの提案:** 技術者が提供する「社内の強み（既存技術、設備、ノハウ）」を理解し、それを活用できそうな新しい研究トピックスを具体的に提案します。
 4.  **議論の促進:** 常に科学的根拠に基づき、シーズ（技術の種）の観点から議論をリードしてください。
 `}]
         };
@@ -385,16 +396,13 @@
                 localStorage.setItem('chatgptApiKey', gptKey);
                 localStorage.setItem('geminiApiKey', geminiKey);
                 
-                // 入力されたGeminiキーをグローバル変数に保存
                 userProvidedGeminiKey = geminiKey;
 
-                // 画面切り替え
                 apiKeyScreen.classList.add('hidden');
                 chatInterface.classList.remove('hidden');
                 chatInterface.classList.add('flex');
                 document.body.classList.add('chat-active'); 
 
-                // チャット初期化
                 initializeChat();
             } else {
                 apiError.classList.remove('hidden');
@@ -427,21 +435,21 @@
         // チャット初期化
         // ----------------------------------------
 
-        function initializeChat() {
+        async function initializeChat() {
             const firstMessage = "技術者の方、こんにちは。私はシーズドリブン担当のChatGPTです。";
             const secondMessage = "私はニーズドリブン担当のGeminiです。本日はどの材料研究開発領域について議論を開始しますか？ 具体的な領域を教えてください。";
             
-            addMessageToUI('ChatGPT', firstMessage);
+            // --- 修正点 3: 初期メッセージもストリーミング風に ---
+            await addMessageToUI('ChatGPT', firstMessage, true); // true (ストリーミング)
             uiHistory.push({ speaker: 'ChatGPT', text: firstMessage });
             
             apiHistory.push({ role: 'user', parts: [{ text: "議論を開始してください。" }] });
             apiHistory.push({ role: 'model', parts: [{ text: firstMessage }] });
 
-            setTimeout(() => {
-                addMessageToUI('Gemini', secondMessage);
-                uiHistory.push({ speaker: 'Gemini', text: secondMessage });
-                apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${secondMessage}`;
-            }, 1000); 
+            // 1秒待たずにすぐ表示開始
+            await addMessageToUI('Gemini', secondMessage, true); // true (ストリーミング)
+            uiHistory.push({ speaker: 'Gemini', text: secondMessage });
+            apiHistory[apiHistory.length - 1].parts[0].text += `\n\n${secondMessage}`;
         }
 
         // ----------------------------------------
@@ -481,38 +489,33 @@
         }
 
         // ----------------------------------------
-        // 中核ロジック (修正済み)
+        // 中核ロジック
         // ----------------------------------------
         
-        /**
-         * ユーザーの入力を処理 (堅牢性を向上させたバージョン)
-         */
         async function handleUserInput() {
             const message = messageInput.value.trim();
             if (!message || isAIBusy) return;
 
-            setLoading(true); // 先にローディング状態にする
+            setLoading(true); 
             
             try {
-                // UIと履歴の更新を try ブロック内で行う
-                addMessageToUI('Technician', message);
+                // --- 修正点 4: ユーザーのメッセージはストリーミングしない ---
+                await addMessageToUI('Technician', message, false); 
                 messageInput.value = '';
                 
                 uiHistory.push({ speaker: 'Technician', text: message });
                 apiHistory.push({ role: 'user', parts: [{ text: message }] });
 
-                // 終了キーワードのチェック
                 const endKeywords = ['議論終了', '議論をおわる', 'おわり', 'レポート作成', '終了します'];
                 if (endKeywords.some(keyword => message.includes(keyword))) {
                     await generateReport();
-                    // この場合、finally で setLoading(false) が呼ばれる
                     return; 
                 }
 
-                // AI応答チェーン
+                // --- 修正点 5: AIの応答を await で待つ ---
                 // 1. ChatGPT (シーズ) の応答
                 const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true); 
-                addMessageToUI('ChatGPT', responseGpt);
+                await addMessageToUI('ChatGPT', responseGpt, true); // true (ストリーミング)
                 uiHistory.push({ speaker: 'ChatGPT', text: responseGpt });
                 apiHistory.push({ role: 'model', parts: [{ text: responseGpt }] });
 
@@ -524,21 +527,18 @@
                 apiHistory.push(promptForGemini);
 
                 const responseGemini = await callGeminiApi(systemPromptGemini, apiHistory, true); 
-                addMessageToUI('Gemini', responseGemini);
+                await addMessageToUI('Gemini', responseGemini, true); // true (ストリーミング)
                 uiHistory.push({ speaker: 'Gemini', text: responseGemini });
-                
                 apiHistory.push({ role: 'model', parts: [{ text: responseGemini }] });
                 
             } catch (error) {
-                // どのステップでエラーが起きてもここで捕捉
                 console.error("AI response chain error:", error);
-                if (error.message.includes("403")) {
-                     addMessageToUI('System', `エラー: APIリクエストが禁止されました (403)。入力されたGemini APIキーが正しいか、Google CloudプロジェクトでAPIが有効になっているか確認してください。`);
-                } else {
-                    addMessageToUI('System', `エラーが発生しました: ${error.message}`);
-                }
+                const errorMessage = error.message.includes("403") 
+                    ? `エラー: APIリクエストが禁止されました (403)。入力されたGemini APIキーが正しいか、Google CloudプロジェクトでAPIが有効になっているか確認してください。`
+                    : `エラーが発生しました: ${error.message}`;
+                
+                await addMessageToUI('System', errorMessage, false); // エラーはストリーミングしない
             } finally {
-                // 成功してもエラーでも、必ずローディングを解除
                 setLoading(false);
             }
         }
@@ -548,40 +548,26 @@
             reportModal.classList.remove('hidden');
             reportLoading.classList.remove('hidden');
             reportOutput.innerHTML = '';
-
-            // generateReport は handleUserInput の try ブロック内で呼ばれるため、
-            // エラーが発生した場合は handleUserInput の catch が捕捉する
             
             let historyForReport = [...apiHistory];
             if(historyForReport.length > 0 && historyForReport[historyForReport.length - 1].role === 'user') {
-                historyForReport.pop(); // 最後の「議論終了」メッセージを削除
+                historyForReport.pop(); 
             }
 
-            // レポート生成時も、APIが 'user' の発言を期待するため、ダミープロンプトを追加
             historyForReport.push({
                 role: 'user',
                 parts: [{ text: "(上記が全議論履歴です。指示通りに戦略サマリーレポートを作成してください。)" }]
             });
 
+            // レポート生成自体はストリーミングしない
             const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); 
             
             reportOutput.innerHTML = marked.parse(reportText);
             reportLoading.classList.add('hidden');
-            
-            // 注: もし reportText の取得や marked.parse でエラーが起きた場合、
-            // それは handleUserInput の catch に伝播し、finally で setLoading(false) される。
-            // reportLoading.classList.add('hidden') は実行されないが、モーダルを閉じればリセットされる。
         }
 
-        /**
-         * Gemini API 呼び出し (Exponential Backoff 付き)
-         * @param {object} systemInstruction - システムプロンプト
-         * @param {array} history - API用のチャット履歴 (末尾は 'user' であること)
-         * @param {boolean} useGoogleSearch - Google Search を使うか
-         */
         async function callGeminiApi(systemInstruction, history, useGoogleSearch = false) {
             
-            // 呼び出しの都度、保存されたユーザーのキーを使ってAPI URLを構築する
             if (!userProvidedGeminiKey) {
                 throw new Error("Gemini APIキーが設定されていません。");
             }
@@ -592,7 +578,6 @@
 
             if (history.length > 0 && history[history.length - 1].role !== 'user') {
                 console.error("API call history error: Last role is not 'user'.", history);
-                // エラーをスローして handleUserInput の catch で処理させる
                 throw new Error("内部エラー: API履歴の形式が不正です。");
             }
 
@@ -641,7 +626,7 @@
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed: ${error.message}`);
                     if (i === maxRetries - 1) {
-                        throw error; // 最終試行でも失敗、これを handleUserInput の catch が捕捉
+                        throw error; 
                     }
                     await new Promise(resolve => setTimeout(resolve, delay));
                     delay *= 2; 
@@ -653,7 +638,13 @@
         // UI ヘルパー
         // ----------------------------------------
 
-        function addMessageToUI(speaker, message) {
+        /**
+         * チャットUIにメッセージを追加 (ストリーミングエフェクト付き)
+         * @param {'Technician' | 'ChatGPT' | 'Gemini' | 'System'} speaker
+         * @param {string} message
+         * @param {boolean} streamEffect - タイピングエフェクトを有効にするか
+         */
+        async function addMessageToUI(speaker, message, streamEffect = false) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('chat-bubble', 'flex', 'flex-col');
             
@@ -698,13 +689,48 @@
             
             const contentElement = document.createElement('div');
             contentElement.classList.add('message-content');
-            contentElement.innerHTML = marked.parse(message);
             
             messageElement.appendChild(speakerElement);
             messageElement.appendChild(contentElement);
             chatContainer.appendChild(messageElement);
 
+            // 常にコンテナの最下部にスクロール
             chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // --- 修正点 6: ストリーミングエフェクトのロジック ---
+            if (streamEffect && message) {
+                let fullText = '';
+                
+                // タイピングカーソルを作成
+                const cursor = document.createElement('span');
+                cursor.classList.add('typing-cursor', 'animate-pulse');
+                cursor.innerText = '▌';
+                contentElement.appendChild(cursor);
+                
+                // テキストノードを作成（カーソルの前に挿入するため）
+                const textNode = document.createTextNode('');
+                contentElement.insertBefore(textNode, cursor);
+
+                for (const char of message) {
+                    fullText += char;
+                    textNode.nodeValue += char; // テキストノードを更新
+                    
+                    chatContainer.scrollTop = chatContainer.scrollHeight; // スクロールを維持
+                    await new Promise(resolve => setTimeout(resolve, typingSpeedMs));
+                }
+                
+                // カーソルを削除
+                contentElement.removeChild(cursor);
+                
+                // ストリーミング完了後、Markdownに変換
+                contentElement.innerHTML = marked.parse(message);
+                chatContainer.scrollTop = chatContainer.scrollHeight; // 最終スクロール
+
+            } else {
+                // ストリーミングなしの場合
+                contentElement.innerHTML = marked.parse(message || ''); // message が null や undefined でもエラーにならないように
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
         }
 
         function setLoading(isLoading) {
