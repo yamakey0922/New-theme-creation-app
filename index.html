@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- marked.js CDN (Markdownパーサー) -->
-    <script src="https://cdn.jsdelivr.npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Font Awesome CDN (アイコン) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -275,15 +275,8 @@
         const reportLoading = document.getElementById('report-loading');
         const reportOutput = document.getElementById('report-output');
 
-        // --- 修正点 1 ---
         // ユーザーが入力したGemini APIキーを保持する変数
         let userProvidedGeminiKey = "";
-        
-        // グローバルなAPI URLとキーの定義を削除
-        // const apiKey = ""; 
-        // const genAIApiUrl = ...
-        // (これらは callGeminiApi 関数内で動的に構築されます)
-        // ---------------
 
         // チャット履歴
         let uiHistory = [];
@@ -389,14 +382,11 @@
             const geminiKey = geminiApiKeyInput.value.trim();
 
             if (gptKey && geminiKey) {
-                // キーをローカルストレージに保存
                 localStorage.setItem('chatgptApiKey', gptKey);
                 localStorage.setItem('geminiApiKey', geminiKey);
                 
-                // --- 修正点 2 ---
                 // 入力されたGeminiキーをグローバル変数に保存
                 userProvidedGeminiKey = geminiKey;
-                // ---------------
 
                 // 画面切り替え
                 apiKeyScreen.classList.add('hidden');
@@ -491,28 +481,35 @@
         }
 
         // ----------------------------------------
-        // 中核ロジック
+        // 中核ロジック (修正済み)
         // ----------------------------------------
         
+        /**
+         * ユーザーの入力を処理 (堅牢性を向上させたバージョン)
+         */
         async function handleUserInput() {
             const message = messageInput.value.trim();
             if (!message || isAIBusy) return;
-            
-            addMessageToUI('Technician', message);
-            messageInput.value = '';
-            setLoading(true);
-            
-            uiHistory.push({ speaker: 'Technician', text: message });
-            apiHistory.push({ role: 'user', parts: [{ text: message }] });
 
-            const endKeywords = ['議論終了', '議論をおわる', 'おわり', 'レポート作成', '終了します'];
-            if (endKeywords.some(keyword => message.includes(keyword))) {
-                await generateReport();
-                setLoading(false);
-                return;
-            }
-
+            setLoading(true); // 先にローディング状態にする
+            
             try {
+                // UIと履歴の更新を try ブロック内で行う
+                addMessageToUI('Technician', message);
+                messageInput.value = '';
+                
+                uiHistory.push({ speaker: 'Technician', text: message });
+                apiHistory.push({ role: 'user', parts: [{ text: message }] });
+
+                // 終了キーワードのチェック
+                const endKeywords = ['議論終了', '議論をおわる', 'おわり', 'レポート作成', '終了します'];
+                if (endKeywords.some(keyword => message.includes(keyword))) {
+                    await generateReport();
+                    // この場合、finally で setLoading(false) が呼ばれる
+                    return; 
+                }
+
+                // AI応答チェーン
                 // 1. ChatGPT (シーズ) の応答
                 const responseGpt = await callGeminiApi(systemPromptChatGPT, apiHistory, true); 
                 addMessageToUI('ChatGPT', responseGpt);
@@ -533,14 +530,15 @@
                 apiHistory.push({ role: 'model', parts: [{ text: responseGemini }] });
                 
             } catch (error) {
+                // どのステップでエラーが起きてもここで捕捉
                 console.error("AI response chain error:", error);
-                // 403エラーの場合、キーが不正である可能性が高いことを示唆する
                 if (error.message.includes("403")) {
                      addMessageToUI('System', `エラー: APIリクエストが禁止されました (403)。入力されたGemini APIキーが正しいか、Google CloudプロジェクトでAPIが有効になっているか確認してください。`);
                 } else {
                     addMessageToUI('System', `エラーが発生しました: ${error.message}`);
                 }
             } finally {
+                // 成功してもエラーでも、必ずローディングを解除
                 setLoading(false);
             }
         }
@@ -551,30 +549,28 @@
             reportLoading.classList.remove('hidden');
             reportOutput.innerHTML = '';
 
-            try {
-                let historyForReport = [...apiHistory];
-                if(historyForReport.length > 0 && historyForReport[historyForReport.length - 1].role === 'user') {
-                    historyForReport.pop(); // 最後の「議論終了」メッセージを削除
-                }
-
-                // --- 修正点 3 ---
-                // レポート生成時も、APIが 'user' の発言を期待するため、ダミープロンプトを追加
-                historyForReport.push({
-                    role: 'user',
-                    parts: [{ text: "(上記が全議論履歴です。指示通りに戦略サマリーレポートを作成してください。)" }]
-                });
-                // ---------------
-
-                const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); 
-                
-                reportOutput.innerHTML = marked.parse(reportText);
-                reportLoading.classList.add('hidden');
-
-            } catch (error) {
-                console.error("Report generation error:", error);
-                reportOutput.innerHTML = `<p class="text-red-500">レポートの生成中にエラーが発生しました: ${error.message}</p>`;
-                reportLoading.classList.add('hidden');
+            // generateReport は handleUserInput の try ブロック内で呼ばれるため、
+            // エラーが発生した場合は handleUserInput の catch が捕捉する
+            
+            let historyForReport = [...apiHistory];
+            if(historyForReport.length > 0 && historyForReport[historyForReport.length - 1].role === 'user') {
+                historyForReport.pop(); // 最後の「議論終了」メッセージを削除
             }
+
+            // レポート生成時も、APIが 'user' の発言を期待するため、ダミープロンプトを追加
+            historyForReport.push({
+                role: 'user',
+                parts: [{ text: "(上記が全議論履歴です。指示通りに戦略サマリーレポートを作成してください。)" }]
+            });
+
+            const reportText = await callGeminiApi(systemPromptReport, historyForReport, false); 
+            
+            reportOutput.innerHTML = marked.parse(reportText);
+            reportLoading.classList.add('hidden');
+            
+            // 注: もし reportText の取得や marked.parse でエラーが起きた場合、
+            // それは handleUserInput の catch に伝播し、finally で setLoading(false) される。
+            // reportLoading.classList.add('hidden') は実行されないが、モーダルを閉じればリセットされる。
         }
 
         /**
@@ -585,21 +581,19 @@
          */
         async function callGeminiApi(systemInstruction, history, useGoogleSearch = false) {
             
-            // --- 修正点 4 ---
             // 呼び出しの都度、保存されたユーザーのキーを使ってAPI URLを構築する
             if (!userProvidedGeminiKey) {
                 throw new Error("Gemini APIキーが設定されていません。");
             }
             const genAIApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userProvidedGeminiKey}`;
-            // ---------------
 
             const maxRetries = 5;
             let delay = 1000; 
 
             if (history.length > 0 && history[history.length - 1].role !== 'user') {
                 console.error("API call history error: Last role is not 'user'.", history);
-                addMessageToUI('System', '内部エラー: API履歴の形式が不正です。');
-                return "内部エラーが発生しました。";
+                // エラーをスローして handleUserInput の catch で処理させる
+                throw new Error("内部エラー: API履歴の形式が不正です。");
             }
 
             const payload = {
@@ -628,7 +622,6 @@
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error("API Error Response:", errorText);
-                        // 403エラーをそのままスローする
                         if (response.status === 403) {
                              throw new Error(`APIリクエスト失敗 (ステータス: 403)。キーが不正か、APIが有効化されていません。`);
                         }
@@ -638,7 +631,7 @@
                     const result = await response.json();
                     
                     if (result.candidates && result.candidates[0].content?.parts?.[0]?.text) {
-                        return result.candidates[0].content.parts[0].text;
+                        return result.candidates[0].content.parts[0].text; // 成功
                     } else if (result.candidates && result.candidates[0].finishReason === "SAFETY") {
                         throw new Error("応答が安全性の設定によりブロックされました。");
                     } else {
@@ -648,7 +641,7 @@
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed: ${error.message}`);
                     if (i === maxRetries - 1) {
-                        throw error; 
+                        throw error; // 最終試行でも失敗、これを handleUserInput の catch が捕捉
                     }
                     await new Promise(resolve => setTimeout(resolve, delay));
                     delay *= 2; 
